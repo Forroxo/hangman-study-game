@@ -1,10 +1,10 @@
 import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
-import Layout from '../../components/Layout/Layout';
-import HangmanGame from '../../components/Game/HangmanGame';
-import Explanation from '../../components/Game/Explanation';
-import ModuleSidebar from '../../components/Modules/ModuleSidebar';
+import Layout from '../../../components/Layout/Layout';
+import HangmanGame from '../../../components/Game/HangmanGame';
+import Explanation from '../../../components/Game/Explanation';
+import ModuleSidebar from '../../../components/Modules/ModuleSidebar';
 
 // Módulos de exemplo (em produção viriam de uma API)
 const SAMPLE_MODULES = {
