@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
-import Layout from '../../components/Layout/Layout';
-import ModuleCard from '../../components/Modules/ModuleCard';
-import ModuleFilter from '../../components/Modules/ModuleFilter';
+import Layout from '../../../components/Layout/Layout';
+import ModuleCard from '../../../components/Modules/ModuleCard';
+import ModuleFilter from '../../../components/Modules/ModuleFilter';
 
 export default function ModulesPage() {
   const [modules, setModules] = useState([]);
