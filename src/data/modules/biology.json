@@ -1,0 +1,113 @@
+{
+  "id": "biology",
+  "name": "🧬 Biologia Celular",
+  "description": "Explore o mundo microscópico das células, organelas e processos vitais que sustentam a vida",
+  "icon": "🔬",
+  "color": "green",
+  "difficulty": "intermediate",
+  "wordCount": 45,
+  "categories": ["ciencias", "biologia", "vestibular", "enem"],
+  "author": "BioLearn Institute",
+  "createdAt": "2024-01-15T10:30:00.000Z",
+  "updatedAt": "2024-01-20T14:15:00.000Z",
+  "rating": 4.8,
+  "reviewCount": 124,
+  "terms": [
+    {
+      "id": "mitocondria_001",
+      "word": "MITOCONDRIA",
+      "hint": "Organela responsável pela produção de energia na célula",
+      "fullExplanation": "A mitocôndria é conhecida como a 'casinha de força' da célula. É uma organela dupla-membranada onde ocorre a respiração celular aeróbica, especificamente o ciclo de Krebs e a cadeia transportadora de elétrons, produzindo ATP (adenosina trifosfato) - a moeda energética da célula. Possui seu próprio DNA circular e ribossomos, evidenciando sua origem endossimbiótica a partir de bactérias ancestrais.",
+      "funFact": "As mitocôndrias possuem DNA materno, sendo herdadas exclusivamente da mãe. Além disso, a teoria endossimbiótica sugere que elas eram organismos independentes que foram incorporados por células eucarióticas há bilhões de anos!",
+      "difficulty": "medium",
+      "category": "Organelas Celulares",
+      "tags": ["organela", "energia", "respiração", "ATP", "DNA"],
+      "imageUrl": "/images/mitochondria.png",
+      "relatedTerms": ["ATP", "Respiração Celular", "DNA Mitocondrial"]
+    },
+    {
+      "id": "ribossomo_002",
+      "word": "RIBOSSOMO",
+      "hint": "Estrutura celular responsável pela síntese de proteínas",
+      "fullExplanation": "Os ribossomos são complexos ribonucleoproteicos (RNA + proteínas) que realizam a tradução do RNA mensageiro (mRNA) em cadeias polipeptídicas. Podem ser encontrados livres no citoplasma (produzindo proteínas para uso interno) ou associados ao retículo endoplasmático rugoso (produzindo proteínas para secreção ou membrana). São compostos por duas subunidades (maior e menor) que se unem durante o processo de tradução.",
+      "funFact": "Os ribossomos são tão essenciais que são encontrados em todos os domínios da vida - Archaea, Bacteria e Eukarya. Muitos antibióticos, como a estreptomicina e tetraciclina, atuam especificamente nos ribossomos bacterianos, inibindo a síntese proteica sem afetar os ribossomos humanos!",
+      "difficulty": "medium",
+      "category": "Organelas Celulares",
+      "tags": ["organela", "proteína", "síntese", "tradução", "RNA"],
+      "imageUrl": "/images/ribosome.png",
+      "relatedTerms": ["RNA Mensageiro", "Tradução", "Retículo Endoplasmático"]
+    },
+    {
+      "id": "nucleo_003",
+      "word": "NÚCLEO",
+      "hint": "Estrutura que contém o material genético da célula eucariótica",
+      "fullExplanation": "O núcleo é a organela mais proeminente da célula eucariótica, delimitada pelo envelope nuclear (dupla membrana com poros nucleares). Contém o DNA organizado em cromossomos durante a divisão celular e em cromatina durante a interfase. É responsável pelo controle das atividades celulares através da expressão gênica, além de abrigar o nucléolo (local de produção dos ribossomos).",
+      "funFact": "O núcleo foi a primeira organela a ser descrita cientificamente! Antonie van Leeuwenhoek observou o 'lúmen' (núcleo) em células de salmão em 1676, mas apenas em 1831 Robert Brown deu o nome 'núcleo' e reconheceu sua importância universal nas células eucarióticas.",
+      "difficulty": "easy",
+      "category": "Organelas Celulares",
+      "tags": ["organela", "DNA", "genética", "cromossomo", "eucarioto"],
+      "imageUrl": "/images/nucleus.png",
+      "relatedTerms": ["DNA", "Cromossomo", "Envelope Nuclear"]
+    },
+    {
+      "id": "cloroplasto_004",
+      "word": "CLOROPLASTO",
+      "hint": "Organela onde ocorre a fotossíntese nas células vegetais",
+      "fullExplanation": "Os cloroplastos são organelas presentes em células vegetais e algas, delimitados por dupla membrana e contendo tilacoides empilhados em granum, imersos no estroma. Contêm clorofila e outros pigmentos fotossintéticos que captam energia luminosa, convertendo-a em energia química (ATP e NADPH) através das reações luminosas. No estroma ocorre o ciclo de Calvin, fixando CO₂ em carboidratos.",
+      "funFact": "Assim como as mitocôndrias, os cloroplastos têm origem endossimbiótica! Acredita-se que ancestrais das plantas engoliram cianobactérias fotossintetizantes, que evoluíram para cloroplastos. Eles ainda possuem DNA circular próprio e se dividem independentemente da célula!",
+      "difficulty": "medium",
+      "category": "Organelas Celulares",
+      "tags": ["organela", "fotossíntese", "planta", "clorofila", "energia"],
+      "imageUrl": "/images/chloroplast.png",
+      "relatedTerms": ["Fotossíntese", "Clorofila", "Tilacoide"]
+    },
+    {
+      "id": "lisossomo_005",
+      "word": "LISOSSOMO",
+      "hint": "Organela responsável pela digestão intracelular",
+      "fullExplanation": "Os lisossomos são vesículas membranosas que contêm enzimas digestivas (hidrolases ácidas) capazes de digerir diversos tipos de biomoléculas (proteínas, lipídios, carboidratos, ácidos nucleicos). Atuam na reciclagem de componentes celulares desgastados (autofagia), digestão de partículas englobadas por fagocitose ou pinocitose, e na defesa contra patógenos. Mantêm pH ácido (~4.5-5.0) ideal para atividade enzimática.",
+      "funFact": "As enzimas lisossômicas são tão poderosas que, se liberadas no citoplasma, digeririam toda a célula em minutos! Por isso são mantidas isoladas em compartimentos membranosos. Doenças de armazenamento lisossômico, como a doença de Tay-Sachs, ocorrem quando há deficiência de enzimas específicas.",
+      "difficulty": "medium",
+      "category": "Organelas Celulares",
+      "tags": ["organela", "digestão", "enzima", "autofagia", "fagocitose"],
+      "imageUrl": "/images/lysosome.png",
+      "relatedTerms": ["Enzima", "Autofagia", "Fagocitose"]
+    },
+    {
+      "id": "retículo_endoplasmático_006",
+      "word": "RETÍCULO ENDOPLASMÁTICO",
+      "hint": "Rede de membranas envolvida na síntese e transporte de proteínas e lipídios",
+      "fullExplanation": "O retículo endoplasmático (RE) é um sistema contínuo de membranas formando cisternas, túbulos e vesículas. Divide-se em RE rugoso (com ribossomos aderidos, especializado em síntese e processamento de proteínas para secreção ou membrana) e RE liso (sem ribossomos, envolvido na síntese de lipídios, detoxificação e estoque de cálcio). É fundamental para a biogênese de membranas e compartimentalização celular.",
+      "funFact": "O retículo endoplasmático ocupa até 50% do volume celular em algumas células especializadas! Nas células do fígado (hepatócitos), o RE liso é abundantíssimo para detoxificação de drogas e álcool. Em células do pâncreas exócrino, o RE rugoso é extremamente desenvolvido para produção de enzimas digestivas.",
+      "difficulty": "advanced",
+      "category": "Organelas Celulares",
+      "tags": ["organela", "proteína", "lipídio", "membrana", "transporte"],
+      "imageUrl": "/images/endoplasmic-reticulum.png",
+      "relatedTerms": ["Ribossomo", "Complexo de Golgi", "Membrana Plasmática"]
+    },
+    {
+      "id": "complexo_golgi_007",
+      "word": "COMPLEXO DE GOLGI",
+      "hint": "Organela responsável pelo processamento, empacotamento e distribuição de proteínas",
+      "fullExplanation": "O complexo de Golgi consiste em pilhas de cisternas achatadas (dictiossomos) com polaridade definida: face cis (recebe vesículas do RE), região medial (processamento) e face trans (expede vesículas). Modifica proteínas e lipídios através de glicosilação, sulfatação e fosforilação; classifica moléculas para diferentes destinos (lisossomos, membrana plasmática, secreção); e forma vesículas de transporte. É o 'centro de distribuição' celular.",
+      "funFact": "Descoberto por Camillo Golgi em 1898 usando sua técnica de impregnação pela prata, o aparelho de Golgi gerou controvérsia por décadas sobre ser real ou artefato! Apenas com o microscópio eletrônico na década de 1950 sua existência foi incontestavelmente confirmada.",
+      "difficulty": "medium",
+      "category": "Organelas Celulares",
+      "tags": ["organela", "processamento", "empacotamento", "glicosilação", "vesícula"],
+      "imageUrl": "/images/golgi-apparatus.png",
+      "relatedTerms": ["Retículo Endoplasmático", "Vesícula", "Secreção Celular"]
+    },
+    {
+      "id": "atp_008",
+      "word": "ATP",
+      "hint": "Molécula que armazena e fornece energia para processos celulares",
+      "fullExplanation": "A adenosina trifosfato (ATP) é um nucleotídeo composto por adenina, ribose e três grupos fosfato. A hidrólise da ligação entre os fosfatos β e γ libera aproximadamente 7,3 kcal/mol, tornando-a a principal 'moeda energética' da célula. É constantemente regenerada a partir de ADP + Pi através da fosforilação oxidativa (mitocôndrias), fotofosforilação (cloroplastos) e fosforilação ao nível do substrato (glicólise).",
+      "funFact": "Uma célula humana consome e regenera seu peso equivalente em ATP a cada dia! Um adulto em repouso utiliza cerca de 40 kg de ATP diariamente, mas o pool celular é apenas cerca de 50 gramas - cada molécula de ATP é reciclada cerca de 1000 vezes por dia!",
+      "difficulty": "medium",
+      "category": "Bioquímica Celular",
+      "tags": ["energia", "nucleotídeo", "metabolismo", "hidrólise", "fosforilação"],
+      "imageUrl": "/images/atp.png",
+      "relatedTerms": ["Mitocôndria", "Respiração Celular", "ADP"]
+    }
+  ]
+}
