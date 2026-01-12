@@ -5,8 +5,16 @@ export default function Explanation({ term, result, onNext }) {
 
   if (!term) return null;
 
-  const getResultColor = () => {
-    return result === 'won' ? 'green' : result === 'lost' ? 'red' : 'amber';
+  const getResultBgColor = () => {
+    return result === 'won' ? 'bg-green-500' : result === 'lost' ? 'bg-red-500' : 'bg-amber-500';
+  };
+
+  const getResultTextColor = () => {
+    return result === 'won' ? 'text-green-700' : result === 'lost' ? 'text-red-700' : 'text-amber-700';
+  };
+
+  const getResultBgLight = () => {
+    return result === 'won' ? 'bg-green-100' : result === 'lost' ? 'bg-red-100' : 'bg-amber-100';
   };
 
   const getMotivationMessage = () => {
@@ -28,7 +36,7 @@ export default function Explanation({ term, result, onNext }) {
   return (
     <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-lg overflow-hidden fade-in">
       {/* Header */}
-      <div className={`bg-${getResultColor()}-500 p-6 text-white`}>
+      <div className={`${getResultBgColor()} p-6 text-white`}>
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold">Explicação do Termo</h2>
@@ -44,7 +52,7 @@ export default function Explanation({ term, result, onNext }) {
         {/* Termo e definição */}
         <div className="mb-8">
           <div className="flex items-center gap-4 mb-4">
-            <div className={`text-3xl bg-${getResultColor()}-100 text-${getResultColor()}-700 p-3 rounded-xl`}>
+            <div className={`text-3xl ${getResultBgLight()} ${getResultTextColor()} p-3 rounded-xl`}>
               {result === 'won' ? '✅' : '📖'}
             </div>
             <div>

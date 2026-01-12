@@ -4,6 +4,19 @@ import Link from 'next/link';
 export default function ModuleSidebar({ module, currentIndex, gameHistory }) {
   const [expanded, setExpanded] = useState(true);
 
+  const getModuleColor = (color) => {
+    const colors = {
+      blue: 'from-blue-500 to-blue-600',
+      green: 'from-green-500 to-green-600',
+      purple: 'from-purple-500 to-purple-600',
+      red: 'from-red-500 to-red-600',
+      yellow: 'from-yellow-500 to-yellow-600',
+      indigo: 'from-indigo-500 to-indigo-600',
+      gray: 'from-gray-500 to-gray-600'
+    };
+    return colors[color] || colors.blue;
+  };
+
   // Calcula estatísticas do módulo
   const getModuleStats = () => {
     const totalTerms = module.terms.length;
@@ -43,7 +56,7 @@ export default function ModuleSidebar({ module, currentIndex, gameHistory }) {
         {expanded ? (
           <>
             <div className="flex items-center gap-3 mb-4">
-              <div className={`text-2xl p-3 rounded-xl bg-gradient-to-br from-${module.color}-500 to-${module.color}-600 text-white`}>
+              <div className={`text-2xl p-3 rounded-xl bg-gradient-to-br ${getModuleColor(module.color)} text-white`}>
                 {module.icon}
               </div>
               <div>
@@ -55,7 +68,7 @@ export default function ModuleSidebar({ module, currentIndex, gameHistory }) {
           </>
         ) : (
           <div className="flex justify-center">
-            <div className={`text-2xl p-3 rounded-xl bg-gradient-to-br from-${module.color}-500 to-${module.color}-600 text-white`}>
+            <div className={`text-2xl p-3 rounded-xl bg-gradient-to-br ${getModuleColor(module.color)} text-white`}>
               {module.icon}
             </div>
           </div>

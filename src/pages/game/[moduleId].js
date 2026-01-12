@@ -1,10 +1,10 @@
 import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
-import Layout from '../../../components/Layout/Layout';
-import HangmanGame from '../../../components/Game/HangmanGame';
-import Explanation from '../../../components/Game/Explanation';
-import ModuleSidebar from '../../../components/Modules/ModuleSidebar';
+import Layout from '../../components/Layout/Layout';
+import HangmanGame from '../../components/Game/HangmanGame';
+import Explanation from '../../components/Game/Explanation';
+import ModuleSidebar from '../../components/Modules/ModuleSidebar';
 
 // Módulos de exemplo (em produção viriam de uma API)
 const SAMPLE_MODULES = {
@@ -116,6 +116,19 @@ export default function ModuleGamePage() {
   const [showExplanation, setShowExplanation] = useState(false);
   const [lastGameResult, setLastGameResult] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const getModuleColor = (color) => {
+    const colors = {
+      blue: 'from-blue-500 to-blue-600',
+      green: 'from-green-500 to-green-600',
+      purple: 'from-purple-500 to-purple-600',
+      red: 'from-red-500 to-red-600',
+      yellow: 'from-yellow-500 to-yellow-600',
+      indigo: 'from-indigo-500 to-indigo-600',
+      gray: 'from-gray-500 to-gray-600'
+    };
+    return colors[color] || colors.blue;
+  };
 
   // Carrega módulo
   useEffect(() => {
@@ -241,7 +254,7 @@ export default function ModuleGamePage() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div>
                   <div className="flex items-center gap-3 mb-2">
-                    <div className={`text-3xl p-3 rounded-xl bg-gradient-to-br from-${module.color}-500 to-${module.color}-600 text-white`}>
+                    <div className={`text-3xl p-3 rounded-xl bg-gradient-to-br ${getModuleColor(module.color)} text-white`}>
                       {module.icon}
                     </div>
                     <div>

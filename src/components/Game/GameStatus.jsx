@@ -7,28 +7,40 @@ export default function GameStatus({ status, timeSpent, word, onNext, onReview }
         return {
           title: '🎉 Parabéns!',
           message: 'Você adivinhou a palavra!',
-          color: 'green',
+          bgColor: 'bg-green-50',
+          borderColor: 'border-green-200',
+          buttonBg: 'bg-green-600',
+          buttonHover: 'hover:bg-green-700',
           icon: '🏆',
         };
       case 'lost':
         return {
           title: '💀 Fim de Jogo',
           message: 'Mas você aprendeu algo novo!',
-          color: 'red',
+          bgColor: 'bg-red-50',
+          borderColor: 'border-red-200',
+          buttonBg: 'bg-red-600',
+          buttonHover: 'hover:bg-red-700',
           icon: '📚',
         };
       case 'solved':
         return {
           title: '🔍 Palavra Revelada',
           message: 'Agora você sabe a resposta!',
-          color: 'amber',
+          bgColor: 'bg-amber-50',
+          borderColor: 'border-amber-200',
+          buttonBg: 'bg-amber-600',
+          buttonHover: 'hover:bg-amber-700',
           icon: '🎯',
         };
       default:
         return {
           title: 'Jogo Concluído',
           message: 'Continue aprendendo!',
-          color: 'blue',
+          bgColor: 'bg-blue-50',
+          borderColor: 'border-blue-200',
+          buttonBg: 'bg-blue-600',
+          buttonHover: 'hover:bg-blue-700',
           icon: '✅',
         };
     }
@@ -43,7 +55,7 @@ export default function GameStatus({ status, timeSpent, word, onNext, onReview }
   };
 
   return (
-    <div className={`bg-${config.color}-50 border border-${config.color}-200 rounded-xl p-6 fade-in`}>
+    <div className={`${config.bgColor} border ${config.borderColor} rounded-xl p-6 fade-in`}>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <div className="text-3xl">{config.icon}</div>
@@ -76,7 +88,7 @@ export default function GameStatus({ status, timeSpent, word, onNext, onReview }
       <div className="flex flex-wrap gap-3 justify-center">
         <button
           onClick={onReview}
-          className={`px-6 py-3 bg-${config.color}-600 text-white rounded-lg hover:bg-${config.color}-700 transition-colors`}
+          className={`px-6 py-3 ${config.buttonBg} text-white rounded-lg ${config.buttonHover} transition-colors`}
         >
           Ver Explicação Completa
         </button>
