@@ -54,13 +54,31 @@ export default function MultiplayerRoomPage() {
 
   const handleReady = async () => {
     if (!roomCode || !playerId) return;
-    await setPlayerReady(roomCode, playerId);
-    setIsReady(true);
+    
+    console.log('Tentando marcar como pronto...', { roomCode, playerId });
+    
+    try {
+      await setPlayerReady(roomCode, playerId);
+      setIsReady(true);
+      console.log('✅ Marcado como pronto com sucesso!');
+    } catch (error) {
+      console.error('❌ Erro ao marcar como pronto:', error);
+      alert('Erro ao marcar como pronto. Verifique o console.');
+    }
   };
 
   const handleStartGame = async () => {
     if (!roomCode) return;
-    await startGame(roomCode);
+    
+    console.log('🎮 Host tentando iniciar jogo...', { roomCode, playersCount: players.length, allReady });
+    
+    try {
+      await startGame(roomCode);
+      console.log('✅ Jogo iniciado pelo host!');
+    } catch (error) {
+      console.error('❌ Erro ao iniciar jogo:', error);
+      alert('Erro ao iniciar jogo. Verifique o console.');
+    }
   };
 
   const handleGameEnd = async (result, timeSpent) => {
@@ -141,6 +159,15 @@ export default function MultiplayerRoomPage() {
   const players = Object.values(roomData.players || {});
   const allReady = players.every(p => p.isReady);
   const isHost = currentPlayer?.isHost;
+
+  console.log('📊 Estado da sala:', {
+    status: roomData.status,
+    playersCount: players.length,
+    playersReady: players.filter(p => p.isReady).length,
+    allReady,
+    isHost,
+    currentPlayerId: playerId
+  });
 
   if (roomData.status === 'waiting') {
     return (
@@ -230,16 +257,22 @@ export default function MultiplayerRoomPage() {
                 </button>
               ) : (
                 <div className="bg-green-100 border border-green-300 text-green-800 px-6 py-4 rounded-lg text-center font-medium">
-                  ✓ Você está pronto! Aguardando outros jogadores...
+                  ✓ Você está pronto! Aguardando outros jogadores... ({players.filter(p => p.isReady).length}/{players.length})
                 </div>
               )}
 
-              {isHost && allReady && players.length >= 2 && (
+              {isHost && !allReady && (
+                <div className="bg-yellow-100 border border-yellow-300 text-yellow-800 px-4 py-3 rounded-lg text-center text-sm">
+                  ⏳ Aguardando {players.filter(p => !p.isReady).length} jogador(es) ficar(em) pronto(s)
+                </div>
+              )}
+
+              {isHost && allReady && players.length >= 1 && (
                 <button
                   onClick={handleStartGame}
-                  className="w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:opacity-90 transition-opacity font-medium text-lg"
+                  className="w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:opacity-90 transition-opacity font-medium text-lg animate-pulse"
                 >
-                  🎮 Iniciar Jogo
+                  🎮 Iniciar Jogo Agora!
                 </button>
               )}
 
