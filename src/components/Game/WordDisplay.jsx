@@ -1,14 +1,18 @@
+import { normalizeText } from '../../lib/textUtils';
+
 export default function WordDisplay({ word, guessedLetters, gameStatus }) {
-  const displayWord = word?.toUpperCase() || '';
+  const displayWord = normalizeText(word) || '';
+  const originalWord = word?.toUpperCase() || '';
   
-  const getLetterDisplay = (letter) => {
-    if (letter === ' ') return <span className="mx-4"></span>;
+  const getLetterDisplay = (letter, index) => {
+    if (letter === ' ') return <span key={index} className="mx-4"></span>;
     
-    const isGuessed = guessedLetters.includes(letter);
+    const normalizedLetter = normalizeText(letter)[0];
+    const isGuessed = guessedLetters.includes(normalizedLetter);
     const shouldReveal = gameStatus === 'lost' || gameStatus === 'won';
     
     return (
-      <div className="flex flex-col items-center mx-1">
+      <div key={index} className="flex flex-col items-center mx-1">
         <div
           className={`
             w-12 h-14 flex items-center justify-center
@@ -21,17 +25,18 @@ export default function WordDisplay({ word, guessedLetters, gameStatus }) {
             }
           `}
         >
-          {(isGuessed || shouldReveal) ? letter : '?'}
+          {(isGuessed || shouldReveal) ? originalWord[index] : '?'}
         </div>
         <div className="w-12 h-1 bg-gray-200 mt-1"></div>
       </div>
     );
   };
 
-  const getRevealClass = (letter) => {
+  const getRevealClass = (letter, index) => {
     if (letter === ' ') return '';
     
-    const isGuessed = guessedLetters.includes(letter);
+    const normalizedLetter = normalizeText(letter)[0];
+    const isGuessed = guessedLetters.includes(normalizedLetter);
     if (!isGuessed && gameStatus === 'lost') {
       return 'animate-pulse text-red-600';
     }
@@ -48,14 +53,14 @@ export default function WordDisplay({ word, guessedLetters, gameStatus }) {
           Palavra para adivinhar:
         </h3>
         <div className="text-sm text-gray-500">
-          {displayWord.length} letras
+          {originalWord.length} letras
         </div>
       </div>
       
       <div className="flex flex-wrap justify-center gap-1 mb-8">
-        {displayWord.split('').map((letter, index) => (
-          <div key={index} className={getRevealClass(letter)}>
-            {getLetterDisplay(letter)}
+        {originalWord.split('').map((letter, index) => (
+          <div key={index} className={getRevealClass(letter, index)}>
+            {getLetterDisplay(letter, index)}
           </div>
         ))}
       </div>

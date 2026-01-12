@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
 import HangmanDrawing from './HangmanDrawing';
 import WordDisplay from './WordDisplay';
-import GameControls from './GameControls';
 import GameStatus from './GameStatus';
+import { normalizeText, compareWords } from '../../lib/textUtils';
 
 export default function HangmanGame({ term, onGameEnd }) {
   const [guessedLetters, setGuessedLetters] = useState([]);
   const [errors, setErrors] = useState(0);
   const [gameStatus, setGameStatus] = useState('playing');
   const [timeSpent, setTimeSpent] = useState(0);
+  const [wordInput, setWordInput] = useState('');
+  const [letterInput, setLetterInput] = useState('');
 
   // Timer
   useEffect(() => {
@@ -25,8 +27,8 @@ export default function HangmanGame({ term, onGameEnd }) {
   useEffect(() => {
     if (!term?.word || gameStatus !== 'playing') return;
     
-    const word = term.word.toUpperCase();
-    const uniqueLetters = [...new Set(word.replace(/[^A-Z]/g, ''))];
+    const normalizedWord = normalizeText(term.word);
+    const uniqueLetters = [...new Set(normalizedWord.replace(/[^A-Z]/g, ''))];
     
     // Verifica vitória
     const hasWon = uniqueLetters.every(letter => 
@@ -35,15 +37,15 @@ export default function HangmanGame({ term, onGameEnd }) {
     
     // Verifica derrota (6 erros)
     const wrongGuesses = guessedLetters.filter(
-      letter => !word.includes(letter)
+      letter => !normalizedWord.includes(letter)
     ).length;
     
     if (hasWon) {
       setGameStatus('won');
-      onGameEnd?.(term.id, 'won', timeSpent);
+      onGameEnd?.('won', timeSpent);
     } else if (wrongGuesses >= 6) {
       setGameStatus('lost');
-      onGameEnd?.(term.id, 'lost', timeSpent);
+      onGameEnd?.('lost', timeSpent);
     } else {
       setErrors(wrongGuesses);
     }
@@ -52,6 +54,41 @@ export default function HangmanGame({ term, onGameEnd }) {
   const handleGuess = (letter) => {
     if (gameStatus !== 'playing' || guessedLetters.includes(letter)) return;
     setGuessedLetters(prev => [...prev, letter]);
+    setLetterInput('');
+  };
+
+  const handleWordGuess = (e) => {
+    e.preventDefault();
+    if (gameStatus !== 'playing' || !wordInput.trim()) return;
+    
+    const normalizedInput = normalizeText(wordInput);
+    const normalizedWord = normalizeText(term.word);
+    
+    if (normalizedInput === normalizedWord) {
+      // Acertou a palavra completa
+      const allLetters = [...new Set(normalizedWord.replace(/[^A-Z]/g, ''))];
+      setGuessedLetters(allLetters);
+      setWordInput('');
+    } else {
+      // Errou - conta como erro
+      setErrors(prev => prev + 1);
+      setWordInput('');
+      
+      if (errors + 1 >= 6) {
+        setGameStatus('lost');
+        onGameEnd?.('lost', timeSpent);
+      }
+    }
+  };
+
+  const handleLetterGuess = (e) => {
+    e.preventDefault();
+    if (gameStatus !== 'playing' || !letterInput.trim()) return;
+    
+    const letter = normalizeText(letterInput)[0];
+    if (letter && /^[A-Z]$/.test(letter)) {
+      handleGuess(letter);
+    }
   };
 
   // Teclado físico
@@ -59,8 +96,8 @@ export default function HangmanGame({ term, onGameEnd }) {
     const handleKeyPress = (e) => {
       if (gameStatus !== 'playing') return;
       
-      const key = e.key.toUpperCase();
-      if (/^[A-Z]$/.test(key)) {
+      const key = normalizeText(e.key)[0];
+      if (key && /^[A-Z]$/.test(key) && !guessedLetters.includes(key)) {
         handleGuess(key);
       }
     };
@@ -136,13 +173,66 @@ export default function HangmanGame({ term, onGameEnd }) {
 
       {/* Controles */}
       {gameStatus === 'playing' && (
-        <div className="mt-8">
-          <GameControls 
-            onGuess={handleGuess}
-            guessedLetters={guessedLetters}
-            gameStatus={gameStatus}
-            onSolve={() => setGameStatus('solved')}
-          />
+        <div className="mt-8 space-y-4">
+          {/* Input para palavra completa */}
+          <form onSubmit={handleWordGuess} className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 border-2 border-green-200">
+            <label className="block text-sm font-semibold text-green-900 mb-3">
+              💡 Sabe a palavra? Digite completa:
+            </label>
+            <div className="flex gap-3">
+              <input
+                type="text"
+                value={wordInput}
+                onChange={(e) => setWordInput(e.target.value.toUpperCase())}
+                placeholder="Digite a palavra completa..."
+                className="flex-1 px-4 py-3 border-2 border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-lg font-medium uppercase"
+                disabled={gameStatus !== 'playing'}
+                autoComplete="off"
+              />
+              <button
+                type="submit"
+                disabled={gameStatus !== 'playing' || !wordInput.trim()}
+                className="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Tentar
+              </button>
+            </div>
+            <p className="text-xs text-green-700 mt-2">
+              ⚠️ Cuidado! Se errar a palavra completa, conta como erro
+            </p>
+          </form>
+
+          {/* Input para letra */}
+          <form onSubmit={handleLetterGuess} className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+            <label className="block text-sm font-semibold text-gray-700 mb-3">
+              🔤 Ou tente uma letra:
+            </label>
+            <div className="flex gap-3">
+              <input
+                type="text"
+                value={letterInput}
+                onChange={(e) => {
+                  const normalized = normalizeText(e.target.value);
+                  setLetterInput(normalized.slice(0, 1));
+                }}
+                placeholder="Digite uma letra..."
+                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg font-medium uppercase text-center"
+                maxLength={1}
+                disabled={gameStatus !== 'playing'}
+                autoComplete="off"
+              />
+              <button
+                type="submit"
+                disabled={gameStatus !== 'playing' || !letterInput}
+                className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Tentar
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              💡 Você também pode usar o teclado do seu computador/celular
+            </p>
+          </form>
         </div>
       )}
     </div>

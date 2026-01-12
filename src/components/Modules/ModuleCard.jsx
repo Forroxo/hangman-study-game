@@ -138,15 +138,15 @@ export default function ModuleCard({ module }) {
           </div>
 
           {/* Botão de ação */}
-          <div className="grid grid-cols-2 gap-3 mt-6">
+          <div className="grid grid-cols-3 gap-2 mt-6">
             <button 
               onClick={(e) => {
                 e.preventDefault();
                 window.location.href = `/game/${module.id}`;
               }}
-              className="bg-gradient-to-r from-gray-900 to-gray-800 text-white font-medium py-3 rounded-lg hover:opacity-90 transition-opacity group-hover:shadow-lg"
+              className="bg-gradient-to-r from-gray-900 to-gray-800 text-white font-medium py-3 rounded-lg hover:opacity-90 transition-opacity text-sm"
             >
-              {completionPercentage === 0 ? 'Começar' : 
+              {completionPercentage === 0 ? 'Estudar' : 
                completionPercentage === 100 ? 'Revisar' : 
                'Continuar'}
             </button>
@@ -155,9 +155,18 @@ export default function ModuleCard({ module }) {
                 e.preventDefault();
                 window.location.href = `/share/${module.id}`;
               }}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium py-3 rounded-lg hover:opacity-90 transition-opacity"
+              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium py-3 rounded-lg hover:opacity-90 transition-opacity text-sm"
             >
-              🎯 Desafio
+              🎯 Solo
+            </button>
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                window.location.href = `/multiplayer/create/${module.id}`;
+              }}
+              className="bg-gradient-to-r from-green-600 to-emerald-600 text-white font-medium py-3 rounded-lg hover:opacity-90 transition-opacity text-sm"
+            >
+              👥 Multi
             </button>
           </div>
         </div>
