@@ -9,7 +9,8 @@ import {
   startGame, 
   updatePlayerScore,
   leaveRoom,
-  advanceToNextTerm
+  advanceToNextTerm,
+  checkAllPlayersComplete
 } from '../../../lib/multiplayerService';
 
 export default function MultiplayerRoomPage() {
@@ -68,11 +69,17 @@ export default function MultiplayerRoomPage() {
     const currentTerm = roomData.terms[roomData.currentTermIndex];
     await updatePlayerScore(roomCode, playerId, currentTerm.id, result, timeSpent);
     
-    if (currentPlayer?.isHost) {
-      setTimeout(() => {
-        advanceToNextTerm(roomCode);
-      }, 3000);
-    }
+    // Aguarda 2 segundos para mostrar resultado
+    setTimeout(async () => {
+      // Verifica se todos completaram
+      const allComplete = await checkAllPlayersComplete(roomCode);
+      
+      if (allComplete && currentPlayer?.isHost) {
+        // Se todos completaram e o usuário é host, avança
+        console.log('Todos completaram! Avançando...');
+        await advanceToNextTerm(roomCode);
+      }
+    }, 2000);
   };
 
   const handleLeaveRoom = async () => {

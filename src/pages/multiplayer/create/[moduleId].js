@@ -71,14 +71,14 @@ export default function MultiplayerCreatePage() {
       }
       
       const playerId = Date.now();
-      const roomCode = await createRoom(
+      const { roomCode, playerId: hostId } = await createRoom(
         moduleId,
         selectedModule.name,
         selectedModule.terms,
         playerName.trim()
       );
       
-      router.push(`/multiplayer/room/${roomCode}?playerId=${playerId}`);
+      router.push(`/multiplayer/room/${roomCode}?playerId=${hostId}`);
     } catch (err) {
       console.error(err);
       setError('Erro ao criar sala. Verifique sua conexão e configuração do Firebase.');
