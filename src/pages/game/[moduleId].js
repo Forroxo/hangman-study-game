@@ -5,6 +5,7 @@ import Layout from '../../components/Layout/Layout';
 import HangmanGame from '../../components/Game/HangmanGame';
 import Explanation from '../../components/Game/Explanation';
 import ModuleSidebar from '../../components/Modules/ModuleSidebar';
+import customModules from '../../data/modules/custom-modules.json';
 
 // Módulos de exemplo (em produção viriam de uma API)
 const SAMPLE_MODULES = {
@@ -106,6 +107,22 @@ const SAMPLE_MODULES = {
   }
 };
 
+// Combina módulos padrão com módulos customizados
+const getAllModules = () => {
+  const modules = { ...SAMPLE_MODULES };
+  
+  // Adiciona módulos customizados do JSON
+  if (customModules && Array.isArray(customModules)) {
+    customModules.forEach(module => {
+      if (module.id && module.terms && module.terms.length > 0) {
+        modules[module.id] = module;
+      }
+    });
+  }
+  
+  return modules;
+};
+
 export default function ModuleGamePage() {
   const router = useRouter();
   const { moduleId } = router.query;
@@ -142,7 +159,8 @@ export default function ModuleGamePage() {
     setLoading(true);
     // Simula carregamento de API
     setTimeout(() => {
-      const loadedModule = SAMPLE_MODULES[id] || SAMPLE_MODULES.biology;
+      const allModules = getAllModules();
+      const loadedModule = allModules[id] || allModules.biology;
       setModule(loadedModule);
       setLoading(false);
     }, 500);
@@ -391,13 +409,24 @@ export default function ModuleGamePage() {
 
 // Configuração para rotas dinâmicas
 export async function getStaticPaths() {
-  const paths = Object.keys(SAMPLE_MODULES).map(id => ({
+  const allModules = { ...SAMPLE_MODULES };
+  
+  // Adiciona módulos customizados
+  if (customModules && Array.isArray(customModules)) {
+    customModules.forEach(module => {
+      if (module.id && module.terms && module.terms.length > 0) {
+        allModules[module.id] = module;
+      }
+    });
+  }
+  
+  const paths = Object.keys(allModules).map(id => ({
     params: { moduleId: id }
   }));
   
   return {
     paths,
-    fallback: false
+    fallback: 'blocking'
   };
 }
 

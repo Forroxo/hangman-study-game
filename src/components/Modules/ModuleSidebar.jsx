@@ -153,11 +153,11 @@ export default function ModuleSidebar({ module, currentIndex, gameHistory }) {
                   </div>
                   
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-gray-800 truncate">
-                      {term.word}
+                    <div className="font-medium text-gray-800">
+                      Termo #{index + 1}
                     </div>
                     <div className="text-xs text-gray-500 truncate">
-                      {term.hint.substring(0, 40)}...
+                      {term.category || 'Termo do módulo'}
                     </div>
                   </div>
                   

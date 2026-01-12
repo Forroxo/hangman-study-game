@@ -3,6 +3,7 @@ import Head from 'next/head';
 import Layout from '../../components/Layout/Layout';
 import ModuleCard from '../../components/Modules/ModuleCard';
 import ModuleFilter from '../../components/Modules/ModuleFilter';
+import customModules from '../../data/modules/custom-modules.json';
 
 export default function ModulesPage() {
   const [modules, setModules] = useState([]);
@@ -133,10 +134,24 @@ export default function ModulesPage() {
         }
       ];
 
+      // Adiciona módulos customizados do JSON
+      const allModules = [...sampleModules];
+      if (customModules && Array.isArray(customModules)) {
+        customModules.forEach(module => {
+          if (module.id && module.terms && module.terms.length > 0) {
+            allModules.push({
+              ...module,
+              createdAt: new Date().toISOString().split('T')[0],
+              rating: 5.0
+            });
+          }
+        });
+      }
+
       // Simula delay de rede
       await new Promise(resolve => setTimeout(resolve, 800));
-      setModules(sampleModules);
-      setFilteredModules(sampleModules);
+      setModules(allModules);
+      setFilteredModules(allModules);
     } catch (error) {
       console.error('Erro ao carregar módulos:', error);
     } finally {

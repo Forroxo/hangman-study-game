@@ -138,11 +138,28 @@ export default function ModuleCard({ module }) {
           </div>
 
           {/* Botão de ação */}
-          <button className="mt-6 w-full bg-gradient-to-r from-gray-900 to-gray-800 text-white font-medium py-3 rounded-lg hover:opacity-90 transition-opacity group-hover:shadow-lg">
-            {completionPercentage === 0 ? 'Começar a Estudar' : 
-             completionPercentage === 100 ? 'Revisar Conteúdo' : 
-             'Continuar Estudos'}
-          </button>
+          <div className="grid grid-cols-2 gap-3 mt-6">
+            <button 
+              onClick={(e) => {
+                e.preventDefault();
+                window.location.href = `/game/${module.id}`;
+              }}
+              className="bg-gradient-to-r from-gray-900 to-gray-800 text-white font-medium py-3 rounded-lg hover:opacity-90 transition-opacity group-hover:shadow-lg"
+            >
+              {completionPercentage === 0 ? 'Começar' : 
+               completionPercentage === 100 ? 'Revisar' : 
+               'Continuar'}
+            </button>
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                window.location.href = `/share/${module.id}`;
+              }}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium py-3 rounded-lg hover:opacity-90 transition-opacity"
+            >
+              🎯 Desafio
+            </button>
+          </div>
         </div>
       </div>
     </Link>

@@ -9,7 +9,6 @@ export default function HangmanGame({ term, onGameEnd }) {
   const [errors, setErrors] = useState(0);
   const [gameStatus, setGameStatus] = useState('playing');
   const [timeSpent, setTimeSpent] = useState(0);
-  const [showHint, setShowHint] = useState(false);
 
   // Timer
   useEffect(() => {
@@ -99,21 +98,16 @@ export default function HangmanGame({ term, onGameEnd }) {
             </div>
           </div>
         </div>
-        
-        <button
-          onClick={() => setShowHint(!showHint)}
-          className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600"
-        >
-          {showHint ? 'Ocultar Dica' : 'Mostrar Dica'}
-        </button>
       </div>
 
-      {/* Dica */}
-      {showHint && (
-        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="text-blue-700 font-medium">💡 {term.hint}</p>
+      {/* Dica sempre visível */}
+      <div className="mb-6 p-4 bg-blue-50 border-2 border-blue-300 rounded-lg">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-xl">💡</span>
+          <span className="font-semibold text-blue-900">Dica:</span>
         </div>
-      )}
+        <p className="text-blue-800 font-medium text-lg">{term.hint}</p>
+      </div>
 
       {/* Jogo */}
       <div className="flex flex-col md:flex-row gap-8 items-center">
