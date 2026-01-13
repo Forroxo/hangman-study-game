@@ -79,10 +79,21 @@ export const joinRoom = async (roomCode, playerName) => {
 
 export const setPlayerReady = async (roomCode, playerId) => {
   try {
-    await update(ref(database, `rooms/${roomCode}/players/${playerId}`), {
-      isReady: true
-    });
-    console.log(`Player ${playerId} marcado como pronto`);
+    const playerRef = ref(database, `rooms/${roomCode}/players/${playerId}`);
+    const snapshot = await get(playerRef);
+    if (snapshot.exists()) {
+      const playerData = snapshot.val();
+      // Avoid unnecessary writes if already ready
+      if (playerData.isReady) {
+        console.log(`Player ${playerId} já estava marcado como pronto`);
+        return;
+      }
+
+      await update(playerRef, { isReady: true });
+      console.log(`Player ${playerId} marcado como pronto`);
+    } else {
+      throw new Error('Jogador não encontrado na sala');
+    }
   } catch (error) {
     console.error('Erro ao marcar jogador como pronto:', error);
     throw error;
