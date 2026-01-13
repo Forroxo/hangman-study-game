@@ -34,6 +34,11 @@ export default function JoinRoomPage() {
     
     try {
       const playerId = await joinRoom(roomCode.toUpperCase().trim(), playerName.trim());
+      try {
+        localStorage.setItem(`multiplayer_playerId_${roomCode.toUpperCase().trim()}`, String(playerId));
+      } catch (e) {
+        // localStorage may be unavailable in some environments; ignore
+      }
       router.push(`/multiplayer/room/${roomCode.toUpperCase().trim()}?playerId=${playerId}`);
     } catch (err) {
       console.error(err);

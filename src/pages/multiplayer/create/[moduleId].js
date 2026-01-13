@@ -77,6 +77,11 @@ export default function MultiplayerCreatePage() {
         selectedModule.terms,
         playerName.trim()
       );
+      try {
+        localStorage.setItem(`multiplayer_playerId_${roomCode}`, String(hostId));
+      } catch (e) {
+        // ignore localStorage errors
+      }
       
       router.push(`/multiplayer/room/${roomCode}?playerId=${hostId}`);
     } catch (err) {

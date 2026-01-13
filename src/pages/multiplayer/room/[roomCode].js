@@ -24,9 +24,16 @@ export default function MultiplayerRoomPage() {
 
   useEffect(() => {
     if (router.query.playerId) {
-      setPlayerId(Number(router.query.playerId));
+      setPlayerId(String(router.query.playerId));
+    } else if (roomCode) {
+      try {
+        const stored = localStorage.getItem(`multiplayer_playerId_${roomCode}`);
+        if (stored) setPlayerId(String(stored));
+      } catch (e) {
+        // ignore localStorage errors
+      }
     }
-  }, [router.query.playerId]);
+  }, [router.query.playerId, roomCode]);
 
   useEffect(() => {
     if (!roomCode) return;
@@ -53,12 +60,28 @@ export default function MultiplayerRoomPage() {
   }, [roomData, playerId]);
 
   const handleReady = async () => {
-    if (!roomCode || !playerId) return;
-    
-    console.log('Tentando marcar como pronto...', { roomCode, playerId });
-    
+    if (!roomCode) return;
+
+    // Use playerId from state or fallback to localStorage
+    let id = playerId;
+    if (!id) {
+      try {
+        id = localStorage.getItem(`multiplayer_playerId_${roomCode}`) || null;
+        if (id) setPlayerId(String(id));
+      } catch (e) {
+        id = null;
+      }
+    }
+
+    if (!id) {
+      alert('Não foi possível identificar seu jogador. Reentre na sala pelo link de convite.');
+      return;
+    }
+
+    console.log('Tentando marcar como pronto...', { roomCode, playerId: id });
+
     try {
-      await setPlayerReady(roomCode, playerId);
+      await setPlayerReady(roomCode, id);
       setIsReady(true);
       console.log('✅ Marcado como pronto com sucesso!');
     } catch (error) {
