@@ -1,5 +1,5 @@
 import { useRouter } from 'next/router';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
 import Layout from '../../../components/Layout/Layout';
 import HangmanGame from '../../../components/Game/HangmanGame';
@@ -38,9 +38,21 @@ export default function MultiplayerRoomPage() {
   useEffect(() => {
     if (!roomCode) return;
 
+    const lastSerializedRef = useRef(null);
+
     const unsubscribe = listenToRoom(roomCode, (data) => {
       if (data) {
-        setRoomData(data);
+        try {
+          const serialized = JSON.stringify(data);
+          if (lastSerializedRef.current !== serialized) {
+            lastSerializedRef.current = serialized;
+            setRoomData(data);
+          }
+        } catch (e) {
+          // If serialization fails, fall back to updating state
+          setRoomData(data);
+        }
+
         setLoading(false);
       } else {
         router.push('/modules');
