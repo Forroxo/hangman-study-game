@@ -93,6 +93,8 @@ export default function HangmanGame({ term, onGameEnd }) {
 
   // Teclado físico
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
     const handleKeyPress = (e) => {
       if (gameStatus !== 'playing') return;
       

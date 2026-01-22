@@ -21,11 +21,12 @@ export default function MultiplayerRoomPage() {
   const [loading, setLoading] = useState(true);
   const [isReady, setIsReady] = useState(false);
   const [currentPlayer, setCurrentPlayer] = useState(null);
+  const [message, setMessage] = useState('');
 
   useEffect(() => {
     if (router.query.playerId) {
       setPlayerId(String(router.query.playerId));
-    } else if (roomCode) {
+    } else if (roomCode && typeof window !== 'undefined') {
       try {
         const stored = localStorage.getItem(`multiplayer_playerId_${roomCode}`);
         if (stored) setPlayerId(String(stored));
@@ -76,7 +77,7 @@ export default function MultiplayerRoomPage() {
 
     // Use playerId from state or fallback to localStorage
     let id = playerId;
-    if (!id) {
+    if (!id && typeof window !== 'undefined') {
       try {
         id = localStorage.getItem(`multiplayer_playerId_${roomCode}`) || null;
         if (id) setPlayerId(String(id));
@@ -86,7 +87,7 @@ export default function MultiplayerRoomPage() {
     }
 
     if (!id) {
-      alert('Não foi possível identificar seu jogador. Reentre na sala pelo link de convite.');
+      setMessage('Não foi possível identificar seu jogador. Reentre na sala pelo link de convite.');
       return;
     }
 
@@ -98,7 +99,7 @@ export default function MultiplayerRoomPage() {
       console.log('✅ Marcado como pronto com sucesso!');
     } catch (error) {
       console.error('❌ Erro ao marcar como pronto:', error);
-      alert('Erro ao marcar como pronto. Verifique o console.');
+      setMessage('Erro ao marcar como pronto. Verifique o console.');
     }
   };
 
@@ -112,7 +113,7 @@ export default function MultiplayerRoomPage() {
       console.log('✅ Jogo iniciado pelo host!');
     } catch (error) {
       console.error('❌ Erro ao iniciar jogo:', error);
-      alert('Erro ao iniciar jogo. Verifique o console.');
+      setMessage('Erro ao iniciar jogo. Verifique o console.');
     }
   };
 
@@ -143,11 +144,15 @@ export default function MultiplayerRoomPage() {
   };
 
   const copyRoomCode = () => {
-    navigator.clipboard.writeText(roomCode);
-    alert('Código copiado!');
+    if (typeof window !== 'undefined' && navigator?.clipboard) {
+      navigator.clipboard.writeText(roomCode);
+      setMessage('Código copiado!');
+    }
   };
 
   const shareRoom = () => {
+    if (typeof window === 'undefined') return;
+    
     const url = window.location.origin + `/multiplayer/join?code=${roomCode}`;
     if (navigator.share) {
       navigator.share({
@@ -155,9 +160,9 @@ export default function MultiplayerRoomPage() {
         text: `Entre na minha sala com o código: ${roomCode}`,
         url: url
       });
-    } else {
+    } else if (navigator?.clipboard) {
       navigator.clipboard.writeText(`Entre na minha sala: ${url}`);
-      alert('Link copiado!');
+      setMessage('Link copiado!');
     }
   };
 
@@ -191,8 +196,8 @@ export default function MultiplayerRoomPage() {
     );
   }
 
-  const players = Object.values(roomData.players || {});
-  const allReady = players.every(p => p.isReady);
+  const players = Object.values(roomData?.players || {});
+  const allReady = players.length > 0 && players.every(p => p.isReady);
   const isHost = currentPlayer?.isHost;
 
   console.log('📊 Estado da sala:', {
@@ -210,6 +215,12 @@ export default function MultiplayerRoomPage() {
         <Head>
           <title>Sala {roomCode} - StudyHangman</title>
         </Head>
+
+        {message && (
+          <div className="fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
+            {message}
+          </div>
+        )}
 
         <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-2xl shadow-xl p-8">
