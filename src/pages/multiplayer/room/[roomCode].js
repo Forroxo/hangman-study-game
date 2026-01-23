@@ -15,13 +15,21 @@ import {
 
 export default function MultiplayerRoomPage() {
   const router = useRouter();
-  const { roomCode } = router.query;
+  const [roomCode, setRoomCode] = useState(null);
   const [playerId, setPlayerId] = useState(null);
   const [roomData, setRoomData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isReady, setIsReady] = useState(false);
   const [currentPlayer, setCurrentPlayer] = useState(null);
   const [message, setMessage] = useState('');
+
+  // Sincronizar roomCode do router com estado local (evita SSR mismatch)
+  useEffect(() => {
+    if (!router.isReady) return;
+    if (router.query.roomCode) {
+      setRoomCode(String(router.query.roomCode));
+    }
+  }, [router.isReady, router.query.roomCode]);
 
   useEffect(() => {
     if (router.query.playerId) {
@@ -104,9 +112,10 @@ export default function MultiplayerRoomPage() {
   };
 
   const handleStartGame = async () => {
-    if (!roomCode) return;
+    if (!roomCode || !roomData) return;
     
-    console.log('🎮 Host tentando iniciar jogo...', { roomCode, playersCount: players.length, allReady });
+    const playersInRoom = Object.values(roomData.players || {});
+    console.log('🎮 Host tentando iniciar jogo...', { roomCode, playersCount: playersInRoom.length, allReady: playersInRoom.every(p => p.isReady) });
     
     try {
       await startGame(roomCode);
@@ -166,7 +175,7 @@ export default function MultiplayerRoomPage() {
     }
   };
 
-  if (loading) {
+  if (loading || !router.isReady) {
     return (
       <Layout>
         <div className="flex items-center justify-center min-h-screen">
