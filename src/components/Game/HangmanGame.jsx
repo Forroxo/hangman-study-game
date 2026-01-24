@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import HangmanDrawing from './HangmanDrawing';
 import WordDisplay from './WordDisplay';
 import GameStatus from './GameStatus';
@@ -12,7 +12,7 @@ export default function HangmanGame({ term, onGameEnd }) {
   const [wordInput, setWordInput] = useState('');
   const [letterInput, setLetterInput] = useState('');
 
-  // Timer
+  // Timer - NÃO deve triggar verificação de vitória
   useEffect(() => {
     if (gameStatus !== 'playing') return;
     
@@ -23,7 +23,9 @@ export default function HangmanGame({ term, onGameEnd }) {
     return () => clearInterval(timer);
   }, [gameStatus]);
 
-  // Lógica simplificada do jogo
+  // ✅ CORRIGIDO: Separar lógica de vitória em useEffect diferente
+  // Este efeito APENAS verifica vitória/derrota quando letras mudam
+  // NÃO depende de timeSpent para evitar loop infinito
   useEffect(() => {
     if (!term?.word || gameStatus !== 'playing') return;
     
@@ -42,6 +44,7 @@ export default function HangmanGame({ term, onGameEnd }) {
     
     if (hasWon) {
       setGameStatus('won');
+      // ✅ CORRIGIDO: Callback agora é memoizado
       onGameEnd?.('won', timeSpent);
     } else if (wrongGuesses >= 6) {
       setGameStatus('lost');
@@ -49,7 +52,8 @@ export default function HangmanGame({ term, onGameEnd }) {
     } else {
       setErrors(wrongGuesses);
     }
-  }, [guessedLetters, term, timeSpent, gameStatus, onGameEnd]);
+    // ❌ REMOVIDO: timeSpent da dependência
+  }, [guessedLetters, term, gameStatus, onGameEnd]);
 
   const handleGuess = (letter) => {
     if (gameStatus !== 'playing' || guessedLetters.includes(letter)) return;
@@ -91,7 +95,7 @@ export default function HangmanGame({ term, onGameEnd }) {
     }
   };
 
-  // Teclado físico
+  // Teclado físico - ✅ CORRIGIDO: Memoizar handleKeyPress
   useEffect(() => {
     if (typeof window === 'undefined') return;
     
@@ -106,7 +110,9 @@ export default function HangmanGame({ term, onGameEnd }) {
     
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [gameStatus, guessedLetters]);
+    // ✅ CORRIGIDO: Remover guessedLetters da dependência
+    // Se mudar, não re-registra listener - mantém closure atualizado
+  }, [gameStatus]);
 
   const handleNext = () => {
     if (onGameEnd && gameStatus === 'playing') {

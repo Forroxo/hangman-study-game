@@ -1,5 +1,5 @@
 import { database } from './firebase';
-import { ref, set, get, update, onValue, off, remove } from 'firebase/database';
+import { ref, set, get, update, onValue, off, remove, runTransaction } from 'firebase/database';
 
 export const generateRoomCode = () => {
   return Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -149,30 +149,42 @@ export const updatePlayerScore = async (roomCode, playerId, termId, result, time
     throw new Error('Firebase não está inicializado. Esta função deve ser chamada apenas no cliente.');
   }
   try {
+    // ✅ CORRIGIDO: Usar transaction para evitar race condition
+    // Garante que leitura + cálculo + escrita aconteçam atomicamente
+    // Mesmo que dois jogadores atualizem simultaneamente, o score é correto
     const playerRef = ref(database, `rooms/${roomCode}/players/${playerId}`);
-    const snapshot = await get(playerRef);
     
-    if (snapshot.exists()) {
-      const playerData = snapshot.val();
-      const newScore = playerData.score + (result === 'won' ? 100 : 0);
-      const completedTerms = [...(playerData.completedTerms || []), {
-        termId,
-        result,
-        timeSpent,
-        timestamp: Date.now()
-      }];
+    await runTransaction(playerRef, (currentData) => {
+      if (currentData === null) {
+        console.warn(`Dados do jogador nulos durante transação: ${playerId}`);
+        return;
+      }
       
-      await update(playerRef, {
+      // Calcula novo score dentro da transação (NUNCA leitura sem transação)
+      const pointsEarned = result === 'won' ? 100 : 0;
+      const newScore = (currentData.score || 0) + pointsEarned;
+      
+      return {
+        ...currentData,
         score: newScore,
-        completedTerms,
+        completedTerms: [
+          ...(currentData.completedTerms || []),
+          {
+            termId,
+            result,
+            timeSpent,
+            timestamp: Date.now()
+          }
+        ],
         currentTermComplete: true,
         lastUpdate: Date.now()
-      });
-      
-      console.log(`Player ${playerId} score atualizado: ${newScore}`);
-    }
+      };
+    });
+    
+    console.log(`Player ${playerId} score atualizado com transação`);
   } catch (error) {
-    console.error('Erro ao atualizar score:', error);
+    console.error('Erro ao atualizar score com transação:', error);
+    throw error;
   }
 };
 

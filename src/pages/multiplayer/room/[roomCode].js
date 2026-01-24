@@ -1,5 +1,5 @@
 import { useRouter } from 'next/router';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Head from 'next/head';
 import Layout from '../../../components/Layout/Layout';
 import HangmanGame from '../../../components/Game/HangmanGame';
@@ -91,10 +91,27 @@ export default function MultiplayerRoomPage() {
   }, [roomCode, router]);
 
   // ✅ CORRIGIDO: Sincroniza currentPlayer quando roomData ou playerId mudam
+  // MAS: Verifica se o objeto player realmente mudou para evitar re-renders
   useEffect(() => {
     if (roomData && playerId) {
       const player = roomData.players?.[playerId];
-      setCurrentPlayer(player);
+      // ✅ CORRIGIDO: Comparar dados do player antes de atualizar state
+      // Evita renderização desnecessária se dados são iguais
+      setCurrentPlayer(prev => {
+        if (!prev && !player) return null;
+        if (!prev || !player) return player;
+        // Se todos os campos-chave são iguais, não atualiza
+        if (
+          prev.isReady === player.isReady &&
+          prev.isHost === player.isHost &&
+          prev.score === player.score &&
+          prev.name === player.name &&
+          prev.id === player.id
+        ) {
+          return prev; // Retorna referência antiga para evitar re-render
+        }
+        return player;
+      });
     }
   }, [roomData, playerId]);
 
@@ -155,8 +172,9 @@ export default function MultiplayerRoomPage() {
     }
   };
 
-  // ✅ CORRIGIDO: handleGameEnd com guard clauses
-  const handleGameEnd = async (result, timeSpent) => {
+  // ✅ CORRIGIDO: handleGameEnd com memoização para evitar loop de render
+  // Agora a referência da função só muda quando dependências críticas mudam
+  const handleGameEnd = useCallback(async (result, timeSpent) => {
     if (!roomCode || !playerId || !roomData) return; // ← Proteção contra undefined
     
     const currentTerm = roomData.terms[roomData.currentTermIndex];
@@ -173,7 +191,7 @@ export default function MultiplayerRoomPage() {
         await advanceToNextTerm(roomCode);
       }
     }, 2000);
-  };
+  }, [roomCode, playerId, roomData, currentPlayer?.isHost]);
 
   const handleLeaveRoom = async () => {
     if (roomCode && playerId) {
