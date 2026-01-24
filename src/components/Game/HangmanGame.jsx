@@ -136,12 +136,13 @@ export default function HangmanGame({ term, onGameEnd, isMultiplayer = false, ro
     e.preventDefault();
     if (gameStatus !== 'playing' || !wordInput.trim()) return;
     
+    const normalizedInput = normalizeText(wordInput);
+    
     if (isMultiplayer) {
-      // Modo multiplayer: usa transação
-      handleMultiplayerGuess(wordInput);
+      // Modo multiplayer: usa transação com palavra normalizada
+      handleMultiplayerGuess(normalizedInput);
     } else {
       // Modo single-player
-      const normalizedInput = normalizeText(wordInput);
       const normalizedWord = normalizeText(term.word);
       
       if (normalizedInput === normalizedWord) {
@@ -278,7 +279,7 @@ export default function HangmanGame({ term, onGameEnd, isMultiplayer = false, ro
               <input
                 type="text"
                 value={wordInput}
-                onChange={(e) => setWordInput(e.target.value.toUpperCase())}
+                onChange={(e) => setWordInput(normalizeText(e.target.value))}
                 placeholder="Digite a palavra completa..."
                 className="flex-1 px-4 py-3 border-2 border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-lg font-medium uppercase"
                 disabled={gameStatus !== 'playing'}
