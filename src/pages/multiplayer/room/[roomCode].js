@@ -15,6 +15,12 @@ import {
 
 export default function MultiplayerRoomPage() {
   const router = useRouter();
+  
+  // ✅ CORRIGIDO: roomCode é um estado, NÃO uma desestruturação direta de router.query
+  // PROBLEMA ANTES: const { roomCode } = router.query;
+  // - Durante SSR: router.query = {} (vazio) → roomCode = undefined
+  // - Durante hidratação no cliente: router.query = { roomCode: "ABC123" }
+  // - Isso causa hydration mismatch → Application error
   const [roomCode, setRoomCode] = useState(null);
   const [playerId, setPlayerId] = useState(null);
   const [roomData, setRoomData] = useState(null);
@@ -23,14 +29,19 @@ export default function MultiplayerRoomPage() {
   const [currentPlayer, setCurrentPlayer] = useState(null);
   const [message, setMessage] = useState('');
 
-  // Sincronizar roomCode do router com estado local (evita SSR mismatch)
+  // ✅ CORRIGIDO: useEffect que sincroniza router.query com estado local
+  // Este hook NUNCA executa durante SSR, apenas no navegador
+  // Aguarda router.isReady antes de acessar router.query
   useEffect(() => {
-    if (!router.isReady) return;
+    if (!router.isReady) return; // ← Aguarda router estar pronto
     if (router.query.roomCode) {
       setRoomCode(String(router.query.roomCode));
     }
   }, [router.isReady, router.query.roomCode]);
 
+  // ✅ CORRIGIDO: playerId é sincronizado seguramente
+  // Tenta primeiro do URL (router.query.playerId), depois localStorage
+  // Sempre verifica typeof window !== 'undefined' antes de acessar localStorage
   useEffect(() => {
     if (router.query.playerId) {
       setPlayerId(String(router.query.playerId));
@@ -44,8 +55,13 @@ export default function MultiplayerRoomPage() {
     }
   }, [router.query.playerId, roomCode]);
 
+  // ✅ CORRIGIDO: Firebase listener só ativa quando roomCode existe
+  // Garante que:
+  // 1. Durante SSR (roomCode = null): listener NÃO é criado
+  // 2. No cliente: listener é criado quando roomCode é definido
+  // 3. Cleanup correto ao desmontar ou mudar roomCode
   useEffect(() => {
-    if (!roomCode) return;
+    if (!roomCode) return; // ← Guard clause crítica
 
     const lastSerializedRef = useRef(null);
 
@@ -73,6 +89,7 @@ export default function MultiplayerRoomPage() {
     };
   }, [roomCode, router]);
 
+  // ✅ CORRIGIDO: Sincroniza currentPlayer quando roomData ou playerId mudam
   useEffect(() => {
     if (roomData && playerId) {
       const player = roomData.players?.[playerId];
@@ -80,10 +97,11 @@ export default function MultiplayerRoomPage() {
     }
   }, [roomData, playerId]);
 
+  // ✅ CORRIGIDO: handleReady com proteção de SSR
   const handleReady = async () => {
     if (!roomCode) return;
 
-    // Use playerId from state or fallback to localStorage
+    // Tenta usar playerId do estado ou fallback do localStorage
     let id = playerId;
     if (!id && typeof window !== 'undefined') {
       try {
@@ -111,11 +129,21 @@ export default function MultiplayerRoomPage() {
     }
   };
 
+  // ✅ CORRIGIDO: handleStartGame não usa variável 'players' indefinida
+  // PROBLEMA ANTES: players.length (ReferenceError - players não está no escopo)
+  // SOLUÇÃO: Calcular playersInRoom localmente dentro da função
   const handleStartGame = async () => {
     if (!roomCode || !roomData) return;
     
+    // Calcula players localmente para evitar ReferenceError
     const playersInRoom = Object.values(roomData.players || {});
-    console.log('🎮 Host tentando iniciar jogo...', { roomCode, playersCount: playersInRoom.length, allReady: playersInRoom.every(p => p.isReady) });
+    const allReady = playersInRoom.length > 0 && playersInRoom.every(p => p.isReady);
+    
+    console.log('🎮 Host tentando iniciar jogo...', { 
+      roomCode, 
+      playersCount: playersInRoom.length, 
+      allReady 
+    });
     
     try {
       await startGame(roomCode);
@@ -126,8 +154,9 @@ export default function MultiplayerRoomPage() {
     }
   };
 
+  // ✅ CORRIGIDO: handleGameEnd com guard clauses
   const handleGameEnd = async (result, timeSpent) => {
-    if (!roomCode || !playerId || !roomData) return;
+    if (!roomCode || !playerId || !roomData) return; // ← Proteção contra undefined
     
     const currentTerm = roomData.terms[roomData.currentTermIndex];
     await updatePlayerScore(roomCode, playerId, currentTerm.id, result, timeSpent);
@@ -152,6 +181,8 @@ export default function MultiplayerRoomPage() {
     router.push('/modules');
   };
 
+  // ✅ CORRIGIDO: copyRoomCode com proteção de SSR
+  // Verifica typeof window !== 'undefined' antes de acessar navigator
   const copyRoomCode = () => {
     if (typeof window !== 'undefined' && navigator?.clipboard) {
       navigator.clipboard.writeText(roomCode);
@@ -159,8 +190,11 @@ export default function MultiplayerRoomPage() {
     }
   };
 
+  // ✅ CORRIGIDO: shareRoom com proteção de SSR
+  // Se window não existir (SSR), retorna imediatamente
+  // Se não tiver navigator.share (desktop), copia para clipboard
   const shareRoom = () => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined') return; // ← Guard clause SSR
     
     const url = window.location.origin + `/multiplayer/join?code=${roomCode}`;
     if (navigator.share) {
@@ -175,6 +209,14 @@ export default function MultiplayerRoomPage() {
     }
   };
 
+  // ✅ CORRIGIDO: Verifica AMBOS loading E router.isReady
+  // PROBLEMA ANTES: if (loading) { ... } 
+  // - Renderizava antes do router estar pronto
+  // - router.query ainda estava vazio
+  // - Causa renderização inconsistente
+  // SOLUÇÃO: if (loading || !router.isReady)
+  // - Aguarda router estar pronto
+  // - Aguarda dados do Firebase chegarem
   if (loading || !router.isReady) {
     return (
       <Layout>
@@ -205,6 +247,8 @@ export default function MultiplayerRoomPage() {
     );
   }
 
+  // ✅ SEGURO: Só chegamos aqui se router.isReady e roomData existem
+  // Agora é seguro calcular players, pois roomData não é null
   const players = Object.values(roomData?.players || {});
   const allReady = players.length > 0 && players.every(p => p.isReady);
   const isHost = currentPlayer?.isHost;
