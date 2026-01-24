@@ -416,8 +416,11 @@ export default function MultiplayerRoomPage() {
   }
 
   if (roomData.status === 'playing') {
-    const currentTerm = roomData.terms[roomData.currentTermIndex];
-    const sortedPlayers = players.sort((a, b) => b.score - a.score);
+    // ✅ REFATORADO: Cada jogador vê seu próprio termo
+    const playerData = roomData.players[playerId];
+    const playerTermIndex = playerData?.currentTermIndex || 0;
+    const currentTerm = roomData.terms[playerTermIndex];
+    const sortedPlayers = Object.values(roomData.players || {}).sort((a, b) => b.score - a.score);
 
     return (
       <Layout>
@@ -443,10 +446,10 @@ export default function MultiplayerRoomPage() {
                   <div className="flex-1 bg-white/20 rounded-full h-3 overflow-hidden">
                     <div 
                       className="h-full bg-white transition-all duration-300"
-                      style={{ width: `${((roomData.currentTermIndex + 1) / roomData.terms.length) * 100}%` }}
+                      style={{ width: `${((playerTermIndex + 1) / roomData.terms.length) * 100}%` }}
                     />
                   </div>
-                  <span className="font-medium">{roomData.currentTermIndex + 1}/{roomData.terms.length}</span>
+                  <span className="font-medium">{playerTermIndex + 1}/{roomData.terms.length}</span>
                 </div>
               </div>
 

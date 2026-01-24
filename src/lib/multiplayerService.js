@@ -13,9 +13,24 @@ export const createRoom = async (moduleId, moduleName, terms, hostName) => {
   const hostId = `player_${Date.now()}`;
   const roomRef = ref(database, `rooms/${roomCode}`);
   
-  // Seleciona 10 termos aleatórios
+  // Seleciona 10 termos aleatórios (MESMOS para todos)
   const shuffled = [...terms].sort(() => 0.5 - Math.random());
   const selectedTerms = shuffled.slice(0, Math.min(10, terms.length));
+  
+  // ✅ NOVO: Cada jogador tem seu próprio estado de jogo
+  const playerGameState = {
+    id: hostId,
+    name: hostName,
+    isHost: true,
+    score: 0,
+    // ✅ NOVO: Estado individual do jogo
+    currentTermIndex: 0,
+    guessedLetters: [],
+    wrongGuesses: 0,
+    completedTerms: [],
+    isReady: false,
+    joinedAt: Date.now()
+  };
   
   const roomData = {
     roomCode,
@@ -25,24 +40,16 @@ export const createRoom = async (moduleId, moduleName, terms, hostName) => {
     hostId,
     status: 'waiting',
     createdAt: Date.now(),
-    currentTermIndex: 0,
-    playersReady: {},
+    // ✅ Termos compartilhados (mesmos para todos)
     terms: selectedTerms.map(t => ({
       id: t.id,
       word: t.word,
       hint: t.hint,
       category: t.category
     })),
+    // ✅ Players com estado de jogo independente
     players: {
-      [hostId]: {
-        id: hostId,
-        name: hostName,
-        isHost: true,
-        score: 0,
-        completedTerms: [],
-        isReady: false,
-        joinedAt: Date.now()
-      }
+      [hostId]: playerGameState
     }
   };
   
@@ -68,17 +75,23 @@ export const joinRoom = async (roomCode, playerName) => {
   }
   
   const playerId = `player_${Date.now()}`;
-  const playerData = {
+  
+  // ✅ NOVO: Cada novo jogador tem seu próprio estado
+  const playerGameState = {
     id: playerId,
     name: playerName,
     isHost: false,
     score: 0,
+    // ✅ NOVO: Estado individual
+    currentTermIndex: 0,
+    guessedLetters: [],
+    wrongGuesses: 0,
     completedTerms: [],
     isReady: false,
     joinedAt: Date.now()
   };
   
-  await update(ref(database, `rooms/${roomCode}/players/${playerId}`), playerData);
+  await update(ref(database, `rooms/${roomCode}/players/${playerId}`), playerGameState);
   
   return playerId;
 };
@@ -302,132 +315,150 @@ export const checkAllPlayersComplete = async (roomCode) => {
   }
 };
 
-// ✅ NOVO: Função para processar palpite com TRANSAÇÃO
-// Evita race condition quando múltiplos jogadores adivinham simultaneamente
+// ✅ REFATORADO: Lógica de jogo independente por jogador
 export const submitGuess = async (roomCode, playerId, guess) => {
   if (!database) {
     throw new Error('Firebase não está inicializado. submitGuess deve ser chamada apenas no cliente.');
   }
   
   try {
+    const playerRef = ref(database, `rooms/${roomCode}/players/${playerId}`);
     const roomRef = ref(database, `rooms/${roomCode}`);
-    const normalizedGuess = guess.toUpperCase().trim();
     
-    // Se for uma palavra completa (comprimento > 1), trata como palpite de palavra
+    // Precisa dos dados da sala para acessar os termos
+    const roomSnapshot = await get(roomRef);
+    if (!roomSnapshot.exists()) {
+      throw new Error('Sala não encontrada');
+    }
+    
+    const roomData = roomSnapshot.val();
+    const normalizedGuess = guess.toUpperCase().trim();
     const isWordGuess = normalizedGuess.length > 1;
     
-    const result = await runTransaction(roomRef, (currentData) => {
-      // Proteção: se a sala não existir
-      if (currentData === null) {
-        throw new Error('Sala não encontrada');
+    // ✅ TRANSAÇÃO: Processa o palpite de forma INDIVIDUAL e ATÔMICA
+    const result = await runTransaction(playerRef, (playerData) => {
+      if (playerData === null) {
+        throw new Error('Jogador não encontrado');
       }
 
       // Inicializa estruturas de segurança
-      if (!currentData.guessedLetters) currentData.guessedLetters = [];
-      if (!currentData.wrongGuesses) currentData.wrongGuesses = 0;
-      if (!currentData.players) currentData.players = {};
-      if (!currentData.players[playerId]) {
-        throw new Error('Jogador não encontrado na sala');
-      }
+      if (!playerData.guessedLetters) playerData.guessedLetters = [];
+      if (playerData.wrongGuesses === undefined) playerData.wrongGuesses = 0;
+      if (!playerData.completedTerms) playerData.completedTerms = [];
+      if (playerData.currentTermIndex === undefined) playerData.currentTermIndex = 0;
 
-      // Se o jogo já acabou, aborta transação
-      if (currentData.status !== 'playing') {
-        console.warn('Jogo não está em andamento');
+      // Proteção: se o jogo do jogador já acabou
+      const currentTermIndex = playerData.currentTermIndex;
+      if (currentTermIndex >= roomData.terms.length) {
+        console.warn('Jogo já foi completado por este jogador');
         return; // Cancela transação
       }
 
-      const currentTerm = currentData.terms[currentData.currentTermIndex];
-      if (!currentTerm) {
-        throw new Error('Termo atual não existe');
-      }
-
+      const currentTerm = roomData.terms[currentTermIndex];
       const targetWord = currentTerm.word.toUpperCase();
-      const playerData = currentData.players[playerId];
 
-      // ✅ VERIFICAÇÃO CRÍTICA: Impede processamento duplicado
       if (isWordGuess) {
-        // Palpite de palavra completa
+        // ✅ PALPITE DE PALAVRA COMPLETA (individual)
         if (playerData.wordGuesses && playerData.wordGuesses.includes(normalizedGuess)) {
           console.log(`Jogador ${playerId} já adivinhou a palavra "${normalizedGuess}"`);
-          return; // Cancela - palavra já foi adivinhada
+          return; // Cancela - duplicata
         }
 
-        // Registra palpite de palavra
         if (!playerData.wordGuesses) playerData.wordGuesses = [];
         playerData.wordGuesses.push(normalizedGuess);
 
         if (normalizedGuess === targetWord) {
-          // ACERTO NA PALAVRA COMPLETA!
+          // ✅ ACERTO NA PALAVRA!
           playerData.score = (playerData.score || 0) + 100;
-          playerData.completedTerms = [...(playerData.completedTerms || []), {
+          playerData.completedTerms.push({
             termId: currentTerm.id,
             result: 'won',
             method: 'word_guess',
             timestamp: Date.now()
-          }];
-          playerData.currentTermComplete = true;
-          console.log(`✅ ${playerData.name} acertou a palavra "${targetWord}"!`);
+          });
+          // ✅ Avança para próxima palavra para este jogador
+          playerData.currentTermIndex += 1;
+          playerData.guessedLetters = [];
+          playerData.wrongGuesses = 0;
+          console.log(`✅ ${playerData.name} acertou a palavra! Próxima...`);
         } else {
-          // ERRO NA PALAVRA
-          currentData.wrongGuesses = (currentData.wrongGuesses || 0) + 1;
-          console.log(`❌ Erro coletivo! Total: ${currentData.wrongGuesses}/6`);
+          // ❌ ERRO NA PALAVRA
+          playerData.wrongGuesses += 1;
+          if (playerData.wrongGuesses >= 6) {
+            // Jogador perdeu
+            playerData.completedTerms.push({
+              termId: currentTerm.id,
+              result: 'lost',
+              method: 'word_guess',
+              timestamp: Date.now()
+            });
+            playerData.currentTermIndex += 1;
+            playerData.guessedLetters = [];
+            playerData.wrongGuesses = 0;
+            console.log(`💀 ${playerData.name} perdeu esta rodada`);
+          }
         }
       } else {
-        // Palpite de letra única
-        if (playerData.guessedLetters && playerData.guessedLetters.includes(normalizedGuess)) {
+        // ✅ PALPITE DE LETRA (individual)
+        if (playerData.guessedLetters.includes(normalizedGuess)) {
           console.log(`Jogador ${playerId} já adivinhou a letra "${normalizedGuess}"`);
-          return; // Cancela - letra já foi adivinhada
+          return; // Cancela - duplicata
         }
 
-        // Registra palpite de letra no player
-        if (!playerData.guessedLetters) playerData.guessedLetters = [];
         playerData.guessedLetters.push(normalizedGuess);
 
-        // Registra no nível da sala também para sincronização
-        if (!currentData.guessedLetters.includes(normalizedGuess)) {
-          currentData.guessedLetters.push(normalizedGuess);
-        }
-
         if (targetWord.includes(normalizedGuess)) {
-          // ACERTO NA LETRA
+          // ✅ ACERTO NA LETRA
           console.log(`✅ ${playerData.name} acertou a letra "${normalizedGuess}"!`);
         } else {
-          // ERRO NA LETRA
-          currentData.wrongGuesses = (currentData.wrongGuesses || 0) + 1;
-          console.log(`❌ ${normalizedGuess} não está na palavra. Total erros: ${currentData.wrongGuesses}/6`);
+          // ❌ ERRO NA LETRA
+          playerData.wrongGuesses += 1;
+          console.log(`❌ ${normalizedGuess} errado! Erros: ${playerData.wrongGuesses}/6`);
+        }
+
+        // ✅ Verifica se jogador completou a palavra
+        const uniqueLetters = new Set(targetWord.replace(/[^A-Z]/g, ''));
+        const lettersGuessed = new Set(playerData.guessedLetters);
+        const allLettersFound = [...uniqueLetters].every(letter => lettersGuessed.has(letter));
+
+        if (allLettersFound) {
+          // 🎉 VITÓRIA - descobriu todas as letras
+          playerData.score = (playerData.score || 0) + 100;
+          playerData.completedTerms.push({
+            termId: currentTerm.id,
+            result: 'won',
+            method: 'letter_collection',
+            timestamp: Date.now()
+          });
+          // ✅ Avança para próxima
+          playerData.currentTermIndex += 1;
+          playerData.guessedLetters = [];
+          playerData.wrongGuesses = 0;
+          console.log(`🎉 ${playerData.name} completou a palavra!`);
+        } else if (playerData.wrongGuesses >= 6) {
+          // 💀 DERROTA - muitos erros
+          playerData.completedTerms.push({
+            termId: currentTerm.id,
+            result: 'lost',
+            method: 'too_many_errors',
+            timestamp: Date.now()
+          });
+          // ✅ Avança para próxima (pula esta)
+          playerData.currentTermIndex += 1;
+          playerData.guessedLetters = [];
+          playerData.wrongGuesses = 0;
+          console.log(`💀 ${playerData.name} perdeu esta rodada`);
         }
       }
 
-      // ✅ Verifica condições de fim de jogo APÓS todos os updates
-      const uniqueLetters = new Set(targetWord.replace(/[^A-Z]/g, ''));
-      const lettersGuessed = new Set(currentData.guessedLetters || []);
-      const allLettersFound = [...uniqueLetters].every(letter => lettersGuessed.has(letter));
-
-      if (allLettersFound) {
-        // VITÓRIA - todos acertaram a palavra
-        playerData.score = (playerData.score || 0) + 100;
-        playerData.completedTerms = [...(playerData.completedTerms || []), {
-          termId: currentTerm.id,
-          result: 'won',
-          method: 'letter_collection',
-          timestamp: Date.now()
-        }];
-        playerData.currentTermComplete = true;
-        console.log(`🎉 Palavra "${targetWord}" completada!`);
-      } else if (currentData.wrongGuesses >= 6) {
-        // DERROTA - muitos erros
-        currentData.status = 'finished';
-        console.log('💀 Game Over - 6 erros!');
-      }
-
-      return currentData; // Salva o estado atualizado ATOMICAMENTE
+      return playerData; // Salva estado atualizado do JOGADOR
     });
 
     if (result.committed) {
-      console.log('✅ Palpite processado com sucesso via transação!');
+      console.log('✅ Palpite do jogador processado com sucesso!');
       return result.snapshot.val();
     } else {
-      console.warn('⚠️ Transação cancelada (pode ser duplicada ou jogo não ativo)');
+      console.warn('⚠️ Transação cancelada (palpite duplicado ou jogo finalizado)');
       return null;
     }
   } catch (error) {

@@ -18,20 +18,21 @@ export default function HangmanGame({ term, onGameEnd, isMultiplayer = false, ro
 
   // Se for multiplayer, sincroniza com Firebase
   useEffect(() => {
-    if (!isMultiplayer || !roomData) return;
+    if (!isMultiplayer || !roomData || !roomData.players || !playerId) return;
     
-    // Sincroniza letras adivinhadas do servidor
-    const serverLetters = roomData.guessedLetters || [];
-    setGuessedLetters(serverLetters);
+    const playerData = roomData.players[playerId];
+    if (!playerData) return;
     
-    // Sincroniza erros do servidor
-    setErrors(roomData.wrongGuesses || 0);
+    // ✅ Sincroniza APENAS o estado do jogador atual
+    // Não mais compartilhado entre jogadores
+    setGuessedLetters(playerData.guessedLetters || []);
+    setErrors(playerData.wrongGuesses || 0);
     
-    // Sincroniza status do servidor
-    if (roomData.status !== 'playing') {
-      setGameStatus(roomData.status === 'finished' ? 'lost' : 'playing');
+    // Se chegou ao final do jogo
+    if (playerData.currentTermIndex >= roomData.terms.length) {
+      setGameStatus('finished');
     }
-  }, [roomData, isMultiplayer]);
+  }, [roomData, isMultiplayer, playerId]);
 
   // Timer - NÃO deve triggar verificação de vitória
   useEffect(() => {
