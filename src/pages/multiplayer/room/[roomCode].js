@@ -28,6 +28,9 @@ export default function MultiplayerRoomPage() {
   const [isReady, setIsReady] = useState(false);
   const [currentPlayer, setCurrentPlayer] = useState(null);
   const [message, setMessage] = useState('');
+  
+  // ✅ CORRIGIDO: useRef deve estar no nível superior do componente, não dentro de useEffect
+  const lastSerializedRef = useRef(null);
 
   // ✅ CORRIGIDO: useEffect que sincroniza router.query com estado local
   // Este hook NUNCA executa durante SSR, apenas no navegador
@@ -62,8 +65,6 @@ export default function MultiplayerRoomPage() {
   // 3. Cleanup correto ao desmontar ou mudar roomCode
   useEffect(() => {
     if (!roomCode) return; // ← Guard clause crítica
-
-    const lastSerializedRef = useRef(null);
 
     const unsubscribe = listenToRoom(roomCode, (data) => {
       if (data) {
