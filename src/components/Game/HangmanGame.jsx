@@ -136,14 +136,37 @@ export default function HangmanGame({ term, onGameEnd, isMultiplayer = false, ro
     e.preventDefault();
     if (gameStatus !== 'playing' || !wordInput.trim()) return;
     
+    const normalizedInput = normalizeText(wordInput).trim();
+    const normalizedWord = normalizeText(term.word).trim();
+    
+    // ✅ CORRIGIDO: Rejeitar palpites com menos de 2 caracteres
+    // Evita que "U" seja considerado um palpite de palavra válido
+    if (normalizedInput.length < 2) {
+      setErrorMessage('A palavra deve ter pelo menos 2 letras!');
+      setWordInput('');
+      setTimeout(() => setErrorMessage(''), 3000);
+      return;
+    }
+    
+    console.log('Palpite de palavra:', {
+      input: normalizedInput,
+      term: normalizedWord,
+      termId: term.id,
+      match: normalizedInput === normalizedWord
+    });
+    
     if (isMultiplayer) {
-      // Modo multiplayer: usa transação
-      handleMultiplayerGuess(wordInput);
+      // Modo multiplayer: usa transação com palavra normalizada
+      // Mas também valida comprimento
+      if (normalizedInput.length >= 2) {
+        handleMultiplayerGuess(normalizedInput);
+      } else {
+        setErrorMessage('A palavra deve ter pelo menos 2 letras!');
+        setWordInput('');
+        setTimeout(() => setErrorMessage(''), 3000);
+      }
     } else {
       // Modo single-player
-      const normalizedInput = normalizeText(wordInput);
-      const normalizedWord = normalizeText(term.word);
-      
       if (normalizedInput === normalizedWord) {
         // Acertou a palavra completa
         const allLetters = [...new Set(normalizedWord.replace(/[^A-Z]/g, ''))];
@@ -278,11 +301,19 @@ export default function HangmanGame({ term, onGameEnd, isMultiplayer = false, ro
               <input
                 type="text"
                 value={wordInput}
-                onChange={(e) => setWordInput(e.target.value.toUpperCase())}
+                onChange={(e) => {
+                  const normalized = normalizeText(e.target.value).trim();
+                  // ✅ CORRIGIDO: Apenas aceita letras (remove espaços)
+                  if (/^[A-Z]*$/.test(normalized)) {
+                    setWordInput(normalized);
+                  }
+                }}
                 placeholder="Digite a palavra completa..."
                 className="flex-1 px-4 py-3 border-2 border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-lg font-medium uppercase"
                 disabled={gameStatus !== 'playing'}
                 autoComplete="off"
+                inputMode="text"
+                spellCheck="false"
               />
               <button
                 type="submit"

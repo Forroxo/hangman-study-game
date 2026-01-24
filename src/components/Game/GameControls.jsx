@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
+import { normalizeText } from '../../lib/textUtils';
 
-const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞ';
+const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
 export default function GameControls({ onGuess, guessedLetters, gameStatus, onSolve }) {
   const [quickGuess, setQuickGuess] = useState('');
@@ -14,23 +15,31 @@ export default function GameControls({ onGuess, guessedLetters, gameStatus, onSo
 
   const handleQuickGuessSubmit = (e) => {
     e.preventDefault();
-    if (quickGuess.length === 1 && /^[A-ZÀ-Ü]$/i.test(quickGuess)) {
-      const letter = quickGuess.toUpperCase();
-      if (!guessedLetters.includes(letter)) {
-        onGuess(letter);
+    if (quickGuess.trim()) {
+      const normalized = normalizeText(quickGuess);
+      if (normalized.length === 1 && /^[A-Z]$/.test(normalized)) {
+        if (!guessedLetters.includes(normalized)) {
+          onGuess(normalized);
+        }
+        setQuickGuess('');
       }
-      setQuickGuess('');
     }
   };
 
-  // Teclado físico
+  // ✅ CORRIGIDO: Teclado físico com normalização
+  // Também ignora backspace/delete que pode gerar valores estranhos
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (gameStatus !== 'playing') return;
       
-      const key = e.key.toUpperCase();
-      if (ALPHABET.includes(key) && !guessedLetters.includes(key)) {
-        onGuess(key);
+      // Ignora teclas de controle (Backspace, Delete, etc)
+      if (['Backspace', 'Delete', 'Enter', 'Tab', 'Shift', 'Control', 'Alt'].includes(e.key)) {
+        return;
+      }
+      
+      const normalized = normalizeText(e.key);
+      if (normalized && /^[A-Z]$/.test(normalized) && !guessedLetters.includes(normalized)) {
+        onGuess(normalized);
       }
     };
 
@@ -44,22 +53,24 @@ export default function GameControls({ onGuess, guessedLetters, gameStatus, onSo
 
   return (
     <div className="space-y-6">
-      {/* Input rápido */}
+      {/* Input rápido - ✅ CORRIGIDO para celular */}
       <div className="bg-gray-50 rounded-xl p-4">
         <form onSubmit={handleQuickGuessSubmit} className="flex gap-2">
           <input
             type="text"
             value={quickGuess}
             onChange={(e) => {
-              const val = e.target.value.toUpperCase();
-              if (val.length <= 1 && /^[A-ZÀ-Ü]?$/i.test(val)) {
+              const val = normalizeText(e.target.value);
+              // Aceita apenas letras normalizadas (A-Z)
+              if (/^[A-Z]*$/.test(val)) {
                 setQuickGuess(val);
               }
             }}
-            placeholder="Digite uma letra..."
+            placeholder="Digite uma letra ou palavra..."
             className="flex-1 input-field"
-            maxLength={1}
             disabled={gameStatus !== 'playing'}
+            autoComplete="off"
+            inputMode="text"
           />
           <button
             type="submit"

@@ -5,7 +5,7 @@ export const normalizeText = (text) => {
     .toUpperCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '') // Remove acentos
-    .replace(/[^A-Z\s]/g, ''); // Remove caracteres especiais, mantém apenas A-Z e espaços
+    .replace(/[^A-Z]/g, ''); // Remove TUDO que não é A-Z (incluindo espaços)
 };
 
 export const compareWords = (word1, word2) => {
