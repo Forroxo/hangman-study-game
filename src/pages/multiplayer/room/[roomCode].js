@@ -186,20 +186,65 @@ export default function MultiplayerRoomPage() {
       return;
     }
     
+    console.log(`🎮 Jogador ${playerId} terminou a rodada. Atualizando pontuação...`);
     await updatePlayerScore(roomCode, playerId, currentTerm.id, result, timeSpent);
     
-    // Aguarda 2 segundos para mostrar resultado
+    // Aguarda 1 segundo para mostrar resultado
     setTimeout(async () => {
+      console.log(`⏱️ Verificando se todos completaram a rodada...`);
       // Verifica se todos completaram
       const allComplete = await checkAllPlayersComplete(roomCode);
       
       if (allComplete) {
         // Se todos completaram, qualquer jogador pode finalizar
-        console.log('Todos completaram! Finalizando jogo...');
+        console.log('🎉 Todos completaram! Finalizando jogo...');
         await advanceToNextTerm(roomCode);
+      } else {
+        console.log('⏳ Ainda há jogadores jogando. Aguardando...');
       }
-    }, 2000);
+    }, 1000);
   }, [roomCode, playerId, roomData, currentPlayer]);
+
+  // ✅ NOVO: Auto-verificação periódica para finalizar jogo
+  // Se alguém terminou, verifica a cada 3 segundos se TODOS terminaram
+  // Previne espera infinita ou travamento
+  useEffect(() => {
+    if (!roomCode || !roomData || roomData.status !== 'playing') return;
+    
+    const players = Object.values(roomData.players || {});
+    const playersWhoFinished = players.filter(p => p.currentTermIndex >= roomData.terms.length);
+    const playersStillPlaying = players.filter(p => p.currentTermIndex < roomData.terms.length);
+    
+    // Se apenas 1 jogador, termina automaticamente quando ele termina
+    if (players.length === 1 && playersWhoFinished.length === 1) {
+      console.log('⚠️ Apenas 1 jogador. Finalizando automaticamente...');
+      advanceToNextTerm(roomCode).catch(err => console.error('Erro ao finalizar:', err));
+      return;
+    }
+    
+    const checkIfAllFinished = async () => {
+      try {
+        const allFinished = await checkAllPlayersComplete(roomCode);
+        if (allFinished) {
+          console.log('✅ Auto-verificação: Todos completaram! Finalizando...');
+          await advanceToNextTerm(roomCode);
+        } else if (playersWhoFinished.length > 0 && playersStillPlaying.length > 0) {
+          // Se alguns terminaram mas outros não, mostra quantos estão esperando
+          console.log(`⏳ ${playersWhoFinished.length}/${players.length} jogadores terminaram. Aguardando ${playersStillPlaying.length} jogador(es)...`);
+        }
+      } catch (error) {
+        console.error('Erro na auto-verificação:', error);
+      }
+    };
+    
+    // Verifica a cada 3 segundos se o jogo deve ser finalizado
+    const interval = setInterval(checkIfAllFinished, 3000);
+    
+    // Executa verificação inicial imediatamente
+    checkIfAllFinished();
+    
+    return () => clearInterval(interval);
+  }, [roomCode, roomData]);
 
   const handleLeaveRoom = async () => {
     if (roomCode && playerId) {
@@ -469,6 +514,23 @@ export default function MultiplayerRoomPage() {
                   <div className="mt-4 p-4 bg-white/20 rounded-lg text-center">
                     <p className="font-semibold">✅ Você terminou todos os {roomData.terms.length} termos!</p>
                     <p className="text-sm opacity-90 mt-2">Aguardando outros jogadores finalizarem...</p>
+                    {sortedPlayers.length > 1 && (
+                      <div className="mt-3 text-xs opacity-75">
+                        <p className="font-medium mb-1">Progresso dos outros:</p>
+                        {sortedPlayers
+                          .filter(p => p.id !== playerId)
+                          .map(p => {
+                            const progress = Math.min(p.currentTermIndex + 1, roomData.terms.length);
+                            const isFinished = p.currentTermIndex >= roomData.terms.length;
+                            return (
+                              <div key={p.id} className="mb-1">
+                                <span className={isFinished ? 'line-through' : ''}>{p.name}: {progress}/{roomData.terms.length}</span>
+                                {isFinished && <span className="ml-1">✅</span>}
+                              </div>
+                            );
+                          })}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
