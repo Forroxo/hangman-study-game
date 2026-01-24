@@ -56,7 +56,7 @@ export default function ChallengePage() {
   const [totalTime, setTotalTime] = useState(0);
   const [results, setResults] = useState([]);
   const [challengeComplete, setChallengeComplete] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (moduleId && started) {
