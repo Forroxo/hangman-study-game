@@ -32,8 +32,15 @@ export default function GameControls({ onGuess, guessedLetters, gameStatus, onSo
     const handleKeyDown = (e) => {
       if (gameStatus !== 'playing') return;
       
+      // ✅ CORRIGIDO: Ignorar eventos em inputs/textareas
+      // Evita capturar teclas quando o usuário está digitando em outro campo
+      const activeElement = document.activeElement;
+      if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
+        return;
+      }
+      
       // Ignora teclas de controle (Backspace, Delete, etc)
-      if (['Backspace', 'Delete', 'Enter', 'Tab', 'Shift', 'Control', 'Alt'].includes(e.key)) {
+      if (['Backspace', 'Delete', 'Enter', 'Tab', 'Shift', 'Control', 'Alt', 'Meta'].includes(e.key)) {
         return;
       }
       

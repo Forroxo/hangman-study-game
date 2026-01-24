@@ -202,6 +202,18 @@ export default function HangmanGame({ term, onGameEnd, isMultiplayer = false, ro
     const handleKeyPress = (e) => {
       if (gameStatus !== 'playing') return;
       
+      // ✅ CORRIGIDO: Ignorar eventos em inputs/textareas
+      // Evita capturar teclas quando o usuário está digitando em outro campo
+      const activeElement = document.activeElement;
+      if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
+        return;
+      }
+      
+      // Ignora teclas de controle
+      if (['Backspace', 'Delete', 'Enter', 'Tab', 'Shift', 'Control', 'Alt', 'Meta'].includes(e.key)) {
+        return;
+      }
+      
       const key = normalizeText(e.key)[0];
       if (key && /^[A-Z]$/.test(key)) {
         if (isMultiplayer) {
