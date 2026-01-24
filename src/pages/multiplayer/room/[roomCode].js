@@ -175,9 +175,17 @@ export default function MultiplayerRoomPage() {
   // ✅ CORRIGIDO: handleGameEnd com memoização para evitar loop de render
   // Agora a referência da função só muda quando dependências críticas mudam
   const handleGameEnd = useCallback(async (result, timeSpent) => {
-    if (!roomCode || !playerId || !roomData) return; // ← Proteção contra undefined
+    if (!roomCode || !playerId || !roomData || !currentPlayer) return; // ← Proteção contra undefined
     
-    const currentTerm = roomData.terms[roomData.currentTermIndex];
+    // ✅ CORRIGIDO: Usa o termo ATUAL do jogador
+    const playerTermIndex = currentPlayer.currentTermIndex;
+    const currentTerm = roomData.terms[playerTermIndex];
+    
+    if (!currentTerm) {
+      console.warn('Termo não encontrado para o jogador');
+      return;
+    }
+    
     await updatePlayerScore(roomCode, playerId, currentTerm.id, result, timeSpent);
     
     // Aguarda 2 segundos para mostrar resultado
@@ -191,7 +199,7 @@ export default function MultiplayerRoomPage() {
         await advanceToNextTerm(roomCode);
       }
     }, 2000);
-  }, [roomCode, playerId, roomData, currentPlayer?.isHost]);
+  }, [roomCode, playerId, roomData, currentPlayer]);
 
   const handleLeaveRoom = async () => {
     if (roomCode && playerId) {
@@ -388,7 +396,8 @@ export default function MultiplayerRoomPage() {
               {isHost && allReady && players.length >= 1 && (
                 <button
                   onClick={handleStartGame}
-                  className="w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:opacity-90 transition-opacity font-medium text-lg animate-pulse"
+                  disabled={roomData.status === 'playing' || roomData.status === 'finished'}
+                  className="w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:opacity-90 transition-opacity font-medium text-lg animate-pulse disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   🎮 Iniciar Jogo Agora!
                 </button>
@@ -498,7 +507,9 @@ export default function MultiplayerRoomPage() {
   }
 
   if (roomData.status === 'finished') {
-    const sortedPlayers = players.sort((a, b) => b.score - a.score);
+    // ✅ CORRIGIDO: Usar Object.values para pegar os players
+    const allPlayers = Object.values(roomData.players || {});
+    const sortedPlayers = allPlayers.sort((a, b) => b.score - a.score);
     const winner = sortedPlayers[0];
     const isWinner = winner?.id === playerId;
 
@@ -554,13 +565,13 @@ export default function MultiplayerRoomPage() {
                 onClick={() => router.push('/modules')}
                 className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:opacity-90 transition-opacity font-medium"
               >
-                Escolher Outro Módulo
+                🏠 Voltar para Módulos
               </button>
               <button
                 onClick={handleLeaveRoom}
-                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
               >
-                Sair
+                ❌ Sair
               </button>
             </div>
           </div>

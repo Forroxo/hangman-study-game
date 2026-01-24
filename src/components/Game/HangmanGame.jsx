@@ -34,6 +34,17 @@ export default function HangmanGame({ term, onGameEnd, isMultiplayer = false, ro
     }
   }, [roomData, isMultiplayer, playerId]);
 
+  // ✅ NOVO: Reset quando termo muda (jogador avançou)
+  useEffect(() => {
+    if (!isMultiplayer || !term) return;
+    
+    // Reset do estado local quando entra num novo termo
+    setGameStatus('playing');
+    setWordInput('');
+    setLetterInput('');
+    setErrorMessage('');
+  }, [term?.id, isMultiplayer]);
+
   // Timer - NÃO deve triggar verificação de vitória
   useEffect(() => {
     if (gameStatus !== 'playing') return;
