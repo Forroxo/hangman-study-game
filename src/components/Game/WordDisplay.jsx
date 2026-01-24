@@ -1,8 +1,9 @@
-import { normalizeText } from '../../lib/textUtils';
+import { normalizeText, normalizeTextWithSpaces } from '../../lib/textUtils';
 
 export default function WordDisplay({ word, guessedLetters, gameStatus }) {
-  const displayWord = normalizeText(word) || '';
+  const displayWord = normalizeTextWithSpaces(word) || '';
   const originalWord = word?.toUpperCase() || '';
+  const normalizedWord = normalizeText(word) || '';
   
   const getLetterDisplay = (letter, index) => {
     if (letter === ' ') return <span key={index} className="mx-4"></span>;
@@ -47,7 +48,7 @@ export default function WordDisplay({ word, guessedLetters, gameStatus }) {
   };
 
   return (
-    <div className="bg-white rounded-xl p-6 shadow-inner">
+    <div className="bg-white rounded-xl p-6 shadow-inner word-section-responsive">
       <div className="mb-6">
         <h3 className="text-lg font-semibold text-gray-700 mb-2">
           Palavra para adivinhar:
@@ -77,7 +78,7 @@ export default function WordDisplay({ word, guessedLetters, gameStatus }) {
             </div>
           ) : (
             guessedLetters.map((letter, index) => {
-              const isInWord = displayWord.includes(letter);
+              const isInWord = normalizedWord.includes(letter);
               return (
                 <span
                   key={index}

@@ -26,6 +26,21 @@
   }
 }
 
+/* Mobile keyboard detection */
+@supports (padding: max(0px)) {
+  .word-section-responsive {
+    /* Ajusta altura quando teclado móvel está aberto */
+    @apply max-h-48 md:max-h-none overflow-y-auto;
+  }
+  
+  /* Em mobile, reduz tamanho quando em viewport pequena (teclado aberto) */
+  @media (max-height: 600px) {
+    .word-section-responsive {
+      @apply max-h-32 text-sm;
+    }
+  }
+}
+
 /* Animations */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }

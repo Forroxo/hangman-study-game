@@ -256,14 +256,14 @@ export default function HangmanGame({ term, onGameEnd, isMultiplayer = false, ro
   return (
     <div className="max-w-4xl mx-auto p-4 bg-white rounded-2xl shadow-lg">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-4 md:mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">Jogo da Forca</h2>
-          <div className="flex items-center gap-4 mt-2">
-            <div className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+          <h2 className="text-xl md:text-2xl font-bold text-gray-800">Jogo da Forca</h2>
+          <div className="flex items-center gap-2 md:gap-4 mt-2">
+            <div className="px-2 md:px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs md:text-sm">
               Erros: {errors}/6
             </div>
-            <div className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm">
+            <div className="px-2 md:px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-xs md:text-sm">
               Tempo: {Math.floor(timeSpent / 60)}:{(timeSpent % 60).toString().padStart(2, '0')}
             </div>
           </div>
@@ -271,16 +271,16 @@ export default function HangmanGame({ term, onGameEnd, isMultiplayer = false, ro
       </div>
 
       {/* Dica sempre visível */}
-      <div className="mb-6 p-4 bg-blue-50 border-2 border-blue-300 rounded-lg">
+      <div className="mb-4 md:mb-6 p-3 md:p-4 bg-blue-50 border-2 border-blue-300 rounded-lg">
         <div className="flex items-center gap-2 mb-1">
-          <span className="text-xl">💡</span>
-          <span className="font-semibold text-blue-900">Dica:</span>
+          <span className="text-lg md:text-xl">💡</span>
+          <span className="font-semibold text-blue-900 text-sm md:text-base">Dica:</span>
         </div>
-        <p className="text-blue-800 font-medium text-lg">{term.hint}</p>
+        <p className="text-blue-800 font-medium text-base md:text-lg">{term.hint}</p>
       </div>
 
       {/* Jogo */}
-      <div className="flex flex-col md:flex-row gap-8 items-center">
+      <div className="flex flex-col md:flex-row gap-4 md:gap-8 items-center">
         <div className="flex-1">
           <HangmanDrawing errors={errors} status={gameStatus} />
         </div>
@@ -314,23 +314,21 @@ export default function HangmanGame({ term, onGameEnd, isMultiplayer = false, ro
             </div>
           )}
           {/* Input para palavra completa */}
-          <form onSubmit={handleWordGuess} className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 border-2 border-green-200">
-            <label className="block text-sm font-semibold text-green-900 mb-3">
+          <form onSubmit={handleWordGuess} className="w-full bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-3 md:p-6 border-2 border-green-200 md:mb-4 md:max-h-40">
+            <label className="block text-xs md:text-sm font-semibold text-green-900 mb-2 md:mb-3">
               💡 Sabe a palavra? Digite completa:
             </label>
-            <div className="flex gap-3">
+            <div className="flex gap-2 md:gap-3">
               <input
                 type="text"
                 value={wordInput}
                 onChange={(e) => {
-                  const normalized = normalizeText(e.target.value).trim();
-                  // ✅ CORRIGIDO: Apenas aceita letras (remove espaços)
-                  if (/^[A-Z]*$/.test(normalized)) {
-                    setWordInput(normalized);
-                  }
+                  // ✅ PERMITIR digitação com acentos - será normalizado
+                  // O usuário pode digitar "café" e será aceito como "cafe"
+                  setWordInput(e.target.value);
                 }}
                 placeholder="Digite a palavra completa..."
-                className="flex-1 px-4 py-3 border-2 border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-lg font-medium uppercase"
+                className="flex-1 px-3 md:px-4 py-2 md:py-3 border-2 border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm md:text-lg font-medium uppercase"
                 disabled={gameStatus !== 'playing'}
                 autoComplete="off"
                 inputMode="text"
@@ -339,7 +337,7 @@ export default function HangmanGame({ term, onGameEnd, isMultiplayer = false, ro
               <button
                 type="submit"
                 disabled={gameStatus !== 'playing' || !wordInput.trim()}
-                className="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 md:px-8 py-2 md:py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium text-xs md:text-base disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Tentar
               </button>
@@ -350,34 +348,37 @@ export default function HangmanGame({ term, onGameEnd, isMultiplayer = false, ro
           </form>
 
           {/* Input para letra */}
-          <form onSubmit={handleLetterGuess} className="bg-gray-50 rounded-xl p-6 border border-gray-200">
-            <label className="block text-sm font-semibold text-gray-700 mb-3">
+          <form onSubmit={handleLetterGuess} className="w-full bg-gray-50 rounded-xl p-3 md:p-6 border border-gray-200">
+            <label className="block text-xs md:text-sm font-semibold text-gray-700 mb-2 md:mb-3">
               🔤 Ou tente uma letra:
             </label>
-            <div className="flex gap-3">
+            <div className="flex gap-2 md:gap-3">
               <input
                 type="text"
                 value={letterInput}
                 onChange={(e) => {
                   const normalized = normalizeText(e.target.value);
-                  setLetterInput(normalized.slice(0, 1));
+                  const letter = normalized.slice(0, 1);
+                  setLetterInput(letter);
+                  
+                  // ✅ NOVO: Auto-submit quando digita uma letra
+                  // Em vez de esperar o botão, manda direto
+                  if (letter && /^[A-Z]$/.test(letter) && gameStatus === 'playing') {
+                    // Pequeno delay para garantir que o estado foi atualizado
+                    setTimeout(() => {
+                      handleGuess(letter);
+                    }, 0);
+                  }
                 }}
                 placeholder="Digite uma letra..."
-                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg font-medium uppercase text-center"
+                className="flex-1 px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-lg font-medium uppercase text-center"
                 maxLength={1}
                 disabled={gameStatus !== 'playing'}
                 autoComplete="off"
               />
-              <button
-                type="submit"
-                disabled={gameStatus !== 'playing' || !letterInput || isSubmitting}
-                className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSubmitting ? '⏳...' : 'Tentar'}
-              </button>
             </div>
             <p className="text-xs text-gray-500 mt-2">
-              💡 Você também pode usar o teclado do seu computador/celular
+              💡 Você também pode usar o teclado do seu computador/celular - a letra será enviada automaticamente
             </p>
           </form>
         </div>
