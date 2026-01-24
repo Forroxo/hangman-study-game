@@ -37,9 +37,35 @@ const getAllModules = () => {
   return modules;
 };
 
-export default function MultiplayerCreatePage() {
+export async function getStaticPaths() {
+  // Pre-generate paths for known modules
+  const paths = [
+    { params: { moduleId: 'biology' } },
+    { params: { moduleId: 'programming' } },
+  ];
+
+  return {
+    paths,
+    fallback: 'blocking', // SSR for unknown module IDs
+  };
+}
+
+export async function getStaticProps({ params }) {
+  // This function runs at build time and returns props
+  // No Firebase initialization needed here
+  return {
+    props: {
+      moduleId: params.moduleId,
+    },
+    revalidate: 3600, // Revalidate every hour
+  };
+}
+
+export default function MultiplayerCreatePage({ moduleId: propModuleId }) {
   const router = useRouter();
-  const { moduleId } = router.query;
+  // Use prop during SSR, router.query on client
+  const { moduleId: queryModuleId } = router.query;
+  const moduleId = propModuleId || queryModuleId;
   
   const [playerName, setPlayerName] = useState('');
   const [loading, setLoading] = useState(false);

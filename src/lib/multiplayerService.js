@@ -6,6 +6,9 @@ export const generateRoomCode = () => {
 };
 
 export const createRoom = async (moduleId, moduleName, terms, hostName) => {
+  if (!database) {
+    throw new Error('Firebase não está inicializado. Esta função deve ser chamada apenas no cliente.');
+  }
   const roomCode = generateRoomCode();
   const hostId = `player_${Date.now()}`;
   const roomRef = ref(database, `rooms/${roomCode}`);
@@ -48,6 +51,9 @@ export const createRoom = async (moduleId, moduleName, terms, hostName) => {
 };
 
 export const joinRoom = async (roomCode, playerName) => {
+  if (!database) {
+    throw new Error('Firebase não está inicializado. Esta função deve ser chamada apenas no cliente.');
+  }
   const roomRef = ref(database, `rooms/${roomCode}`);
   const snapshot = await get(roomRef);
   
@@ -78,6 +84,9 @@ export const joinRoom = async (roomCode, playerName) => {
 };
 
 export const setPlayerReady = async (roomCode, playerId) => {
+  if (!database) {
+    throw new Error('Firebase não está inicializado. Esta função deve ser chamada apenas no cliente.');
+  }
   try {
     const playerRef = ref(database, `rooms/${roomCode}/players/${playerId}`);
     const snapshot = await get(playerRef);
@@ -101,6 +110,9 @@ export const setPlayerReady = async (roomCode, playerId) => {
 };
 
 export const startGame = async (roomCode) => {
+  if (!database) {
+    throw new Error('Firebase não está inicializado. Esta função deve ser chamada apenas no cliente.');
+  }
   try {
     console.log(`Iniciando jogo na sala ${roomCode}`);
     
@@ -133,6 +145,9 @@ export const startGame = async (roomCode) => {
 };
 
 export const updatePlayerScore = async (roomCode, playerId, termId, result, timeSpent) => {
+  if (!database) {
+    throw new Error('Firebase não está inicializado. Esta função deve ser chamada apenas no cliente.');
+  }
   try {
     const playerRef = ref(database, `rooms/${roomCode}/players/${playerId}`);
     const snapshot = await get(playerRef);
@@ -162,6 +177,10 @@ export const updatePlayerScore = async (roomCode, playerId, termId, result, time
 };
 
 export const listenToRoom = (roomCode, callback) => {
+  if (!database) {
+    console.warn('Firebase não está inicializado. listenToRoom não pode ser executada no servidor.');
+    return () => {};
+  }
   const roomRef = ref(database, `rooms/${roomCode}`);
   onValue(roomRef, (snapshot) => {
     if (snapshot.exists()) {
@@ -175,14 +194,23 @@ export const listenToRoom = (roomCode, callback) => {
 };
 
 export const leaveRoom = async (roomCode, playerId) => {
+  if (!database) {
+    throw new Error('Firebase não está inicializado. Esta função deve ser chamada apenas no cliente.');
+  }
   await remove(ref(database, `rooms/${roomCode}/players/${playerId}`));
 };
 
 export const deleteRoom = async (roomCode) => {
+  if (!database) {
+    throw new Error('Firebase não está inicializado. Esta função deve ser chamada apenas no cliente.');
+  }
   await remove(ref(database, `rooms/${roomCode}`));
 };
 
 export const advanceToNextTerm = async (roomCode) => {
+  if (!database) {
+    throw new Error('Firebase não está inicializado. Esta função deve ser chamada apenas no cliente.');
+  }
   try {
     const roomRef = ref(database, `rooms/${roomCode}`);
     const snapshot = await get(roomRef);
@@ -222,6 +250,10 @@ export const advanceToNextTerm = async (roomCode) => {
 
 // Nova função para verificar se todos completaram o termo atual
 export const checkAllPlayersComplete = async (roomCode) => {
+  if (!database) {
+    console.warn('Firebase não está inicializado. checkAllPlayersComplete não pode ser executada no servidor.');
+    return false;
+  }
   try {
     const roomRef = ref(database, `rooms/${roomCode}`);
     const snapshot = await get(roomRef);
