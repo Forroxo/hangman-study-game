@@ -49,6 +49,7 @@ export default function ChallengePage() {
   
   const [module, setModule] = useState(null);
   const [challengeTerms, setChallengeTerms] = useState([]);
+  const [selectedCount, setSelectedCount] = useState(10);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [totalScore, setTotalScore] = useState(0);
   const [totalTime, setTotalTime] = useState(0);
@@ -58,18 +59,18 @@ export default function ChallengePage() {
 
   useEffect(() => {
     if (moduleId) {
-      loadChallenge(moduleId);
+      loadChallenge(moduleId, selectedCount);
     }
   }, [moduleId]);
 
-  const loadChallenge = (id) => {
+  const loadChallenge = (id, count = 10) => {
     setLoading(true);
     const allModules = getAllModules();
     const loadedModule = allModules[id];
     
     if (loadedModule && loadedModule.terms) {
       const shuffled = [...loadedModule.terms].sort(() => 0.5 - Math.random());
-      const selected = shuffled.slice(0, Math.min(10, shuffled.length));
+      const selected = shuffled.slice(0, Math.min(count, shuffled.length));
       
       setModule(loadedModule);
       setChallengeTerms(selected);
@@ -252,7 +253,25 @@ export default function ChallengePage() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className="text-2xl font-bold">{module?.name}</h1>
-              <p className="opacity-90">Modo Desafio - 10 Termos</p>
+                  <div className="flex items-center gap-3 mt-1">
+                    <p className="opacity-90">Modo Desafio - {challengeTerms.length} Termos</p>
+                    <label className="text-sm text-white/90">Quantidade:</label>
+                    <select
+                      value={selectedCount}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value, 10) || 10;
+                        setSelectedCount(val);
+                        // recarrega com nova contagem
+                        if (moduleId) loadChallenge(moduleId, val);
+                      }}
+                      className="text-black rounded px-2 py-1"
+                    >
+                      <option value={5}>5</option>
+                      <option value={10}>10</option>
+                      <option value={15}>15</option>
+                      <option value={20}>20</option>
+                    </select>
+                  </div>
             </div>
             <div className="text-right">
               <div className="text-3xl font-bold">{totalScore}</div>
