@@ -16,23 +16,24 @@ export default function HangmanGame({ term, onGameEnd, isMultiplayer = false, ro
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Se for multiplayer, sincroniza com Firebase
+  // ✅ CORRIGIDO: Sincroniza guessedLetters SEMPRE que playerData muda
+  // ANTES: useEffect só rodava quando roomData mudava (insuficiente)
+  // AGORA: Roda quando playerData específico é atualizado pelo servidor
   useEffect(() => {
-    if (!isMultiplayer || !roomData || !roomData.players || !playerId) return;
+    if (!isMultiplayer || !roomData?.players || !playerId) return;
     
     const playerData = roomData.players[playerId];
     if (!playerData) return;
     
-    // ✅ Sincroniza APENAS o estado do jogador atual
-    // Não mais compartilhado entre jogadores
+    // ✅ Sincroniza estado do jogador em tempo real
     setGuessedLetters(playerData.guessedLetters || []);
     setErrors(playerData.wrongGuesses || 0);
     
-    // Se chegou ao final do jogo
+    // Se o servidor avançou para novo termo, reseta UI
     if (playerData.currentTermIndex >= roomData.terms.length) {
       setGameStatus('finished');
     }
-  }, [roomData, isMultiplayer, playerId]);
+  }, [roomData?.players?.[playerId], isMultiplayer, playerId, roomData?.terms?.length]);
 
   // ✅ NOVO: Reset quando termo muda (jogador avançou)
   useEffect(() => {
@@ -59,12 +60,18 @@ export default function HangmanGame({ term, onGameEnd, isMultiplayer = false, ro
     return () => clearInterval(timer);
   }, [gameStatus]);
 
-  // ✅ CORRIGIDO: Separar lógica de vitória em useEffect diferente
-  // Este efeito APENAS verifica vitória/derrota quando letras mudam
-  // NÃO depende de timeSpent para evitar loop infinito
+  // ✅ CORRIGIDO: Verificação de win/loss APENAS em single-player
+  // Em multiplayer, o servidor determina via submitGuess() atomicamente
   useEffect(() => {
     if (!term?.word || gameStatus !== 'playing') return;
     
+    // ❌ EM MULTIPLAYER: DESABILITA esta lógica
+    // O servidor em multiplayerService.submitGuess() já determina e avança o termo
+    if (isMultiplayer) {
+      return; // Não processa win/loss localmente
+    }
+    
+    // ✅ SINGLE-PLAYER APENAS: Determina win/loss localmente
     const normalizedWord = normalizeText(term.word);
     const uniqueLetters = [...new Set(normalizedWord.replace(/[^A-Z]/g, ''))];
     
@@ -80,7 +87,6 @@ export default function HangmanGame({ term, onGameEnd, isMultiplayer = false, ro
     
     if (hasWon) {
       setGameStatus('won');
-      // ✅ CORRIGIDO: Callback agora é memoizado
       onGameEnd?.('won', timeSpent);
     } else if (wrongGuesses >= 6) {
       setGameStatus('lost');
@@ -88,8 +94,7 @@ export default function HangmanGame({ term, onGameEnd, isMultiplayer = false, ro
     } else {
       setErrors(wrongGuesses);
     }
-    // ❌ REMOVIDO: timeSpent da dependência
-  }, [guessedLetters, term, gameStatus, onGameEnd]);
+  }, [guessedLetters, term, gameStatus, onGameEnd, isMultiplayer]);
 
   // ✅ NOVO: Handler para palpites com transações (multiplayer)
   const handleMultiplayerGuess = useCallback(async (guess) => {

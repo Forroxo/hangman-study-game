@@ -5,7 +5,7 @@ export const generateRoomCode = () => {
   return Math.random().toString(36).substring(2, 8).toUpperCase();
 };
 
-export const createRoom = async (moduleId, moduleName, terms, hostName) => {
+export const createRoom = async (moduleId, moduleName, terms, hostName, count = 20) => {
   if (!database) {
     throw new Error('Firebase não está inicializado. Esta função deve ser chamada apenas no cliente.');
   }
@@ -13,9 +13,10 @@ export const createRoom = async (moduleId, moduleName, terms, hostName) => {
   const hostId = `player_${Date.now()}`;
   const roomRef = ref(database, `rooms/${roomCode}`);
   
-  // Seleciona 20 termos aleatórios (MESMOS para todos)
+  // Seleciona N termos aleatórios (MESMOS para todos)
+  const maxCount = Math.max(1, Number(count) || 20);
   const shuffled = [...terms].sort(() => 0.5 - Math.random());
-  const selectedTerms = shuffled.slice(0, Math.min(20, terms.length));
+  const selectedTerms = shuffled.slice(0, Math.min(maxCount, terms.length));
   
   // ✅ NOVO: Cada jogador tem seu próprio estado de jogo
   const playerGameState = {

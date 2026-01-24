@@ -3,6 +3,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import Head from 'next/head';
 import Layout from '../../../components/Layout/Layout';
 import HangmanGame from '../../../components/Game/HangmanGame';
+import { ref, onValue, off } from 'firebase/database';
+import { database } from '../../../lib/firebase';
 import { 
   listenToRoom, 
   setPlayerReady, 
@@ -89,6 +91,47 @@ export default function MultiplayerRoomPage() {
       if (unsubscribe) unsubscribe();
     };
   }, [roomCode, router]);
+
+  // ✅ NOVO: Listener ESPECÍFICO para playerData em tempo real
+  // Garante sincronização de guessedLetters em < 100ms
+  // ANTES: Esperava roomData.listeners atualizar (mais lento)
+  // AGORA: Listener direto em players/{playerId} atualiza HangmanGame imediatamente
+  useEffect(() => {
+    if (!roomCode || !playerId) return;
+
+    try {
+      const playerRef = ref(database, `rooms/${roomCode}/players/${playerId}`);
+      
+      const unsubscribe = onValue(playerRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const playerData = snapshot.val();
+          console.log('📡 PlayerData atualizado em tempo real:', {
+            playerId,
+            guessedLetters: playerData.guessedLetters,
+            wrongGuesses: playerData.wrongGuesses,
+            currentTermIndex: playerData.currentTermIndex
+          });
+          
+          // ✅ Força atualização de roomData para sincronizar HangmanGame
+          // Faz deep copy para garantir que React detecte mudança
+          setRoomData(prev => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              players: {
+                ...prev.players,
+                [playerId]: playerData
+              }
+            };
+          });
+        }
+      });
+
+      return () => off(playerRef, unsubscribe);
+    } catch (error) {
+      console.error('Erro ao criar listener playerData:', error);
+    }
+  }, [roomCode, playerId]);
 
   // ✅ CORRIGIDO: Sincroniza currentPlayer quando roomData ou playerId mudam
   // MAS: Verifica se o objeto player realmente mudou para evitar re-renders

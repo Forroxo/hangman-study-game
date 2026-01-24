@@ -63,6 +63,7 @@ export default function MultiplayerCreatePage({ moduleId: propModuleId }) {
   const [playerName, setPlayerName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [selectedCount, setSelectedCount] = useState(10);
 
   const handleCreateRoom = async (e) => {
     e.preventDefault();
@@ -94,7 +95,8 @@ export default function MultiplayerCreatePage({ moduleId: propModuleId }) {
         moduleId,
         selectedModule.name,
         selectedModule.terms,
-        playerName.trim()
+        playerName.trim(),
+        selectedCount
       );
       try {
         localStorage.setItem(`multiplayer_playerId_${roomCode}`, String(hostId));
@@ -160,10 +162,27 @@ export default function MultiplayerCreatePage({ moduleId: propModuleId }) {
               <ul className="text-sm text-blue-800 space-y-1">
                 <li>✅ Crie uma sala e compartilhe o código</li>
                 <li>✅ Até 6 jogadores podem entrar</li>
-                <li>✅ Todos jogam as mesmas 10 palavras</li>
+                <li>✅ Todos jogam as mesmas {selectedCount} palavras</li>
                 <li>✅ Placar atualiza em tempo real</li>
                 <li>✅ Quem fizer mais pontos vence!</li>
               </ul>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Quantidade de palavras
+              </label>
+              <select
+                value={selectedCount}
+                onChange={(e) => setSelectedCount(Number(e.target.value))}
+                disabled={loading}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={15}>15</option>
+                <option value={20}>20</option>
+              </select>
             </div>
 
             <div className="flex gap-4">
