@@ -50,6 +50,7 @@ export default function ChallengePage() {
   const [module, setModule] = useState(null);
   const [challengeTerms, setChallengeTerms] = useState([]);
   const [selectedCount, setSelectedCount] = useState(10);
+  const [started, setStarted] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [totalScore, setTotalScore] = useState(0);
   const [totalTime, setTotalTime] = useState(0);
@@ -58,10 +59,10 @@ export default function ChallengePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (moduleId) {
+    if (moduleId && started) {
       loadChallenge(moduleId, selectedCount);
     }
-  }, [moduleId]);
+  }, [moduleId, started]);
 
   const loadChallenge = (id, count = 10) => {
     setLoading(true);
@@ -249,51 +250,71 @@ export default function ChallengePage() {
       </Head>
 
       <div className="max-w-4xl mx-auto">
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-6 mb-6 text-white">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-2xl font-bold">{module?.name}</h1>
-                  <div className="flex items-center gap-3 mt-1">
-                    <p className="opacity-90">Modo Desafio - {challengeTerms.length} Termos</p>
-                    <label className="text-sm text-white/90">Quantidade:</label>
-                    <select
-                      value={selectedCount}
-                      onChange={(e) => {
-                        const val = parseInt(e.target.value, 10) || 10;
-                        setSelectedCount(val);
-                        // recarrega com nova contagem
-                        if (moduleId) loadChallenge(moduleId, val);
-                      }}
-                      className="text-black rounded px-2 py-1"
-                    >
-                      <option value={5}>5</option>
-                      <option value={10}>10</option>
-                      <option value={15}>15</option>
-                      <option value={20}>20</option>
-                    </select>
-                  </div>
-            </div>
-            <div className="text-right">
-              <div className="text-3xl font-bold">{totalScore}</div>
-              <div className="text-sm opacity-90">pontos</div>
+        {!started ? (
+          <div className="bg-white rounded-2xl shadow p-6 mb-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-800">{module?.name}</h1>
+                <p className="text-sm text-gray-600 mt-1">Modo Desafio</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <label className="text-sm text-gray-700">Quantidade:</label>
+                <select
+                  value={selectedCount}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value, 10) || 10;
+                    setSelectedCount(val);
+                  }}
+                  className="text-gray-800 rounded px-2 py-1"
+                >
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={15}>15</option>
+                  <option value={20}>20</option>
+                </select>
+                <button
+                  onClick={() => {
+                    if (!moduleId) return;
+                    setStarted(true);
+                    loadChallenge(moduleId, selectedCount);
+                  }}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                >
+                  Iniciar
+                </button>
+              </div>
             </div>
           </div>
-          
-          <div className="flex items-center gap-4">
-            <div className="flex-1 bg-white/20 rounded-full h-3 overflow-hidden">
-              <div 
-                className="h-full bg-white transition-all duration-300"
-                style={{ width: `${((currentIndex + 1) / challengeTerms.length) * 100}%` }}
-              />
+        ) : (
+          <>
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-6 mb-6 text-white">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h1 className="text-2xl font-bold">{module?.name}</h1>
+                  <p className="opacity-90">Modo Desafio - {challengeTerms.length} Termos</p>
+                </div>
+                <div className="text-right">
+                  <div className="text-3xl font-bold">{totalScore}</div>
+                  <div className="text-sm opacity-90">pontos</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="flex-1 bg-white/20 rounded-full h-3 overflow-hidden">
+                  <div 
+                    className="h-full bg-white transition-all duration-300"
+                    style={{ width: `${((currentIndex + 1) / challengeTerms.length) * 100}%` }}
+                  />
+                </div>
+                <span className="font-medium">{currentIndex + 1}/{challengeTerms.length}</span>
+              </div>
             </div>
-            <span className="font-medium">{currentIndex + 1}/{challengeTerms.length}</span>
-          </div>
-        </div>
 
-        <HangmanGame 
-          term={currentTerm}
-          onGameEnd={handleGameEnd}
-        />
+            <HangmanGame 
+              term={currentTerm}
+              onGameEnd={handleGameEnd}
+            />
+          </>
+        )}
       </div>
     </Layout>
   );
