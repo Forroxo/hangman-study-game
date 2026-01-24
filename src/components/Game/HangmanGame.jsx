@@ -3,14 +3,35 @@ import HangmanDrawing from './HangmanDrawing';
 import WordDisplay from './WordDisplay';
 import GameStatus from './GameStatus';
 import { normalizeText, compareWords } from '../../lib/textUtils';
+import { submitGuess } from '../../lib/multiplayerService';
 
-export default function HangmanGame({ term, onGameEnd }) {
+// ✅ NOVO: Componente com suporte a modo multiplayer via transações
+export default function HangmanGame({ term, onGameEnd, isMultiplayer = false, roomCode = null, playerId = null, roomData = null }) {
   const [guessedLetters, setGuessedLetters] = useState([]);
   const [errors, setErrors] = useState(0);
   const [gameStatus, setGameStatus] = useState('playing');
   const [timeSpent, setTimeSpent] = useState(0);
   const [wordInput, setWordInput] = useState('');
   const [letterInput, setLetterInput] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  // Se for multiplayer, sincroniza com Firebase
+  useEffect(() => {
+    if (!isMultiplayer || !roomData) return;
+    
+    // Sincroniza letras adivinhadas do servidor
+    const serverLetters = roomData.guessedLetters || [];
+    setGuessedLetters(serverLetters);
+    
+    // Sincroniza erros do servidor
+    setErrors(roomData.wrongGuesses || 0);
+    
+    // Sincroniza status do servidor
+    if (roomData.status !== 'playing') {
+      setGameStatus(roomData.status === 'finished' ? 'lost' : 'playing');
+    }
+  }, [roomData, isMultiplayer]);
 
   // Timer - NÃO deve triggar verificação de vitória
   useEffect(() => {
@@ -55,32 +76,76 @@ export default function HangmanGame({ term, onGameEnd }) {
     // ❌ REMOVIDO: timeSpent da dependência
   }, [guessedLetters, term, gameStatus, onGameEnd]);
 
-  const handleGuess = (letter) => {
-    if (gameStatus !== 'playing' || guessedLetters.includes(letter)) return;
-    setGuessedLetters(prev => [...prev, letter]);
+  // ✅ NOVO: Handler para palpites com transações (multiplayer)
+  const handleMultiplayerGuess = useCallback(async (guess) => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    setErrorMessage('');
+    
+    try {
+      const result = await submitGuess(roomCode, playerId, guess);
+      
+      if (result) {
+        console.log('✅ Palpite enviado com sucesso');
+        // Estado será sincronizado pelo listener do Firebase
+      } else {
+        // Transação foi cancelada (pode ser duplicada)
+        console.log('⚠️ Palpite já processado ou jogo não ativo');
+      }
+    } catch (error) {
+      console.error('❌ Erro ao enviar palpite:', error);
+      setErrorMessage(error.message || 'Erro ao processar palpite');
+    } finally {
+      setIsSubmitting(false);
+      setLetterInput('');
+      setWordInput('');
+    }
+  }, [roomCode, playerId, isSubmitting]);
+
+  // ✅ Handler unificado para palpites
+  const handleGuess = useCallback((letter) => {
+    if (gameStatus !== 'playing') {
+      setErrorMessage('Jogo não está em andamento');
+      return;
+    }
+    
+    if (isMultiplayer) {
+      // Modo multiplayer: usa transação
+      handleMultiplayerGuess(letter);
+    } else {
+      // Modo single-player: lógica local
+      if (guessedLetters.includes(letter)) return;
+      setGuessedLetters(prev => [...prev, letter]);
+    }
     setLetterInput('');
-  };
+  }, [gameStatus, isMultiplayer, guessedLetters, handleMultiplayerGuess]);
 
   const handleWordGuess = (e) => {
     e.preventDefault();
     if (gameStatus !== 'playing' || !wordInput.trim()) return;
     
-    const normalizedInput = normalizeText(wordInput);
-    const normalizedWord = normalizeText(term.word);
-    
-    if (normalizedInput === normalizedWord) {
-      // Acertou a palavra completa
-      const allLetters = [...new Set(normalizedWord.replace(/[^A-Z]/g, ''))];
-      setGuessedLetters(allLetters);
-      setWordInput('');
+    if (isMultiplayer) {
+      // Modo multiplayer: usa transação
+      handleMultiplayerGuess(wordInput);
     } else {
-      // Errou - conta como erro
-      setErrors(prev => prev + 1);
-      setWordInput('');
+      // Modo single-player
+      const normalizedInput = normalizeText(wordInput);
+      const normalizedWord = normalizeText(term.word);
       
-      if (errors + 1 >= 6) {
-        setGameStatus('lost');
-        onGameEnd?.('lost', timeSpent);
+      if (normalizedInput === normalizedWord) {
+        // Acertou a palavra completa
+        const allLetters = [...new Set(normalizedWord.replace(/[^A-Z]/g, ''))];
+        setGuessedLetters(allLetters);
+        setWordInput('');
+      } else {
+        // Errou - conta como erro
+        setErrors(prev => prev + 1);
+        setWordInput('');
+        
+        if (errors + 1 >= 6) {
+          setGameStatus('lost');
+          onGameEnd?.('lost', timeSpent);
+        }
       }
     }
   };
@@ -95,24 +160,28 @@ export default function HangmanGame({ term, onGameEnd }) {
     }
   };
 
-  // Teclado físico - ✅ CORRIGIDO: Memoizar handleKeyPress
+  // Teclado físico - ✅ Agora com suporte a multiplayer
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || gameStatus !== 'playing') return;
     
     const handleKeyPress = (e) => {
       if (gameStatus !== 'playing') return;
       
       const key = normalizeText(e.key)[0];
-      if (key && /^[A-Z]$/.test(key) && !guessedLetters.includes(key)) {
-        handleGuess(key);
+      if (key && /^[A-Z]$/.test(key)) {
+        if (isMultiplayer) {
+          handleMultiplayerGuess(key);
+        } else {
+          if (!guessedLetters.includes(key)) {
+            handleGuess(key);
+          }
+        }
       }
     };
     
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-    // ✅ CORRIGIDO: Remover guessedLetters da dependência
-    // Se mudar, não re-registra listener - mantém closure atualizado
-  }, [gameStatus]);
+  }, [gameStatus, isMultiplayer, guessedLetters, handleMultiplayerGuess]);
 
   const handleNext = () => {
     if (onGameEnd && gameStatus === 'playing') {
@@ -182,6 +251,12 @@ export default function HangmanGame({ term, onGameEnd }) {
       {/* Controles */}
       {gameStatus === 'playing' && (
         <div className="mt-8 space-y-4">
+          {/* Mensagem de erro */}
+          {errorMessage && (
+            <div className="bg-red-50 border border-red-300 text-red-700 px-6 py-3 rounded-lg">
+              {errorMessage}
+            </div>
+          )}
           {/* Input para palavra completa */}
           <form onSubmit={handleWordGuess} className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 border-2 border-green-200">
             <label className="block text-sm font-semibold text-green-900 mb-3">
@@ -231,10 +306,10 @@ export default function HangmanGame({ term, onGameEnd }) {
               />
               <button
                 type="submit"
-                disabled={gameStatus !== 'playing' || !letterInput}
+                disabled={gameStatus !== 'playing' || !letterInput || isSubmitting}
                 className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Tentar
+                {isSubmitting ? '⏳...' : 'Tentar'}
               </button>
             </div>
             <p className="text-xs text-gray-500 mt-2">

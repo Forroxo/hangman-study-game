@@ -453,6 +453,10 @@ export default function MultiplayerRoomPage() {
               <HangmanGame 
                 term={currentTerm}
                 onGameEnd={handleGameEnd}
+                isMultiplayer={true}
+                roomCode={roomCode}
+                playerId={playerId}
+                roomData={roomData}
               />
             </div>
 
