@@ -4,36 +4,10 @@ import Head from 'next/head';
 import Layout from '../../components/Layout/Layout';
 import HangmanGame from '../../components/Game/HangmanGame';
 import customModules from '../../data/modules/custom-modules.json';
+import biologyModule from '../../data/modules/biology.json';
 
 const SAMPLE_MODULES = {
-  biology: {
-    id: 'biology',
-    name: '🧬 Biologia Celular',
-    color: 'green',
-    terms: [
-      {
-        id: 'mitocondria_001',
-        word: 'MITOCONDRIA',
-        hint: 'Organela responsável pela produção de energia na célula',
-        fullExplanation: 'A mitocôndria é conhecida como a "casinha de força" da célula.',
-        category: 'Biologia Celular',
-      },
-      {
-        id: 'ribossomo_002',
-        word: 'RIBOSSOMO',
-        hint: 'Estrutura celular responsável pela síntese proteica',
-        fullExplanation: 'Os ribossomos traduzem o RNA mensageiro em cadeias polipeptídicas.',
-        category: 'Biologia Celular',
-      },
-      {
-        id: 'nucleo_003',
-        word: 'NUCLEO',
-        hint: 'Estrutura que contém o material genético da célula',
-        fullExplanation: 'O núcleo é responsável pelo controle das atividades celulares.',
-        category: 'Biologia Celular',
-      },
-    ]
-  },
+  biology: biologyModule,
   programming: {
     id: 'programming',
     name: '💻 JavaScript Básico',

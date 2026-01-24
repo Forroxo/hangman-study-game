@@ -3,18 +3,11 @@ import { useState } from 'react';
 import Head from 'next/head';
 import Layout from '../../../components/Layout/Layout';
 import customModules from '../../../data/modules/custom-modules.json';
+import biologyModule from '../../../data/modules/biology.json';
 import { createRoom } from '../../../lib/multiplayerService';
 
 const SAMPLE_MODULES = {
-  biology: {
-    id: 'biology',
-    name: '🧬 Biologia Celular',
-    terms: [
-      { id: '1', word: 'MITOCONDRIA', hint: 'Organela responsável pela produção de energia', category: 'Organelas' },
-      { id: '2', word: 'RIBOSSOMO', hint: 'Estrutura responsável pela síntese proteica', category: 'Organelas' },
-      { id: '3', word: 'NUCLEO', hint: 'Estrutura que contém o material genético', category: 'Organelas' },
-    ]
-  },
+  biology: biologyModule,
   programming: {
     id: 'programming',
     name: '💻 JavaScript Básico',

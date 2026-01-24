@@ -6,72 +6,11 @@ import HangmanGame from '../../components/Game/HangmanGame';
 import Explanation from '../../components/Game/Explanation';
 import ModuleSidebar from '../../components/Modules/ModuleSidebar';
 import customModules from '../../data/modules/custom-modules.json';
+import biologyModule from '../../data/modules/biology.json';
 
-// Módulos de exemplo (em produção viriam de uma API)
+// Módulos de exemplo (carregados de JSON)
 const SAMPLE_MODULES = {
-  biology: {
-    id: 'biology',
-    name: '🧬 Biologia Celular',
-    description: 'Explore organelas, processos celulares e genética básica',
-    icon: '🔬',
-    color: 'green',
-    difficulty: 'intermediate',
-    wordCount: 45,
-    categories: ['ciencias', 'biologia', 'vestibular'],
-    author: 'BioLearn',
-    terms: [
-      {
-        id: 'mitocondria_001',
-        word: 'MITOCONDRIA',
-        hint: 'Organela responsável pela produção de energia na célula',
-        fullExplanation: 'A mitocôndria é conhecida como a "casinha de força" da célula, onde ocorre a respiração celular e produção de ATP através do ciclo de Krebs e cadeia transportadora de elétrons.',
-        funFact: 'As mitocôndrias têm seu próprio DNA e se acredita que eram organismos independentes que foram incorporados às células!',
-        difficulty: 'medium',
-        category: 'Biologia Celular',
-        tags: ['organela', 'energia', 'respiração']
-      },
-      {
-        id: 'ribossomo_002',
-        word: 'RIBOSSOMO',
-        hint: 'Estrutura celular responsável pela síntese proteica',
-        fullExplanation: 'Os ribossomos são complexos de RNA ribossomal e proteínas que traduzem o RNA mensageiro em cadeias polipeptídicas. Podem ser livres no citoplasma ou associados ao retículo endoplasmático.',
-        funFact: 'Os ribossomos são encontrados em todos os tipos de células, incluindo bactérias, o que os torna alvos para antibióticos como a tetraciclina.',
-        difficulty: 'medium',
-        category: 'Biologia Celular',
-        tags: ['organela', 'proteína', 'síntese']
-      },
-      {
-        id: 'nucleo_003',
-        word: 'NÚCLEO',
-        hint: 'Estrutura que contém o material genético da célula',
-        fullExplanation: 'O núcleo é a organela mais proeminente da célula eucariótica, envolta por uma dupla membrana nuclear chamada envelope nuclear. Contém o DNA organizado em cromossomos e é responsável pelo controle das atividades celulares.',
-        funFact: 'O núcleo foi a primeira organela a ser descoberta, observada por Antonie van Leeuwenhoek em 1676 em células de salmão.',
-        difficulty: 'easy',
-        category: 'Biologia Celular',
-        tags: ['organela', 'DNA', 'genética']
-      },
-      {
-        id: 'cloroplasto_004',
-        word: 'CLOROPLASTO',
-        hint: 'Organela onde ocorre a fotossíntese nas células vegetais',
-        fullExplanation: 'Os cloroplastos são organelas presentes em células vegetais e algas que contêm clorofila e são responsáveis pela fotossíntese. Possuem seu próprio DNA, semelhante às mitocôndrias.',
-        funFact: 'Assim como as mitocôndrias, os cloroplastos têm origem endossimbiótica - eram cianobactérias que foram incorporadas por células eucarióticas.',
-        difficulty: 'medium',
-        category: 'Biologia Celular',
-        tags: ['organela', 'fotossíntese', 'planta']
-      },
-      {
-        id: 'lisossomo_005',
-        word: 'LISOSSOMO',
-        hint: 'Organela responsável pela digestão intracelular',
-        fullExplanation: 'Os lisossomos são vesículas membranosas que contêm enzimas digestivas (hidrolases ácidas) capazes de digerir diversos tipos de biomoléculas. Atuam na reciclagem de componentes celulares e defesa contra patógenos.',
-        funFact: 'As enzimas dos lisossomos são tão poderosas que, se liberadas, poderiam digerir toda a célula. Por isso são mantidas isoladas em compartimentos membranosos.',
-        difficulty: 'medium',
-        category: 'Biologia Celular',
-        tags: ['organela', 'digestão', 'enzima']
-      }
-    ]
-  },
+  biology: biologyModule,
   programming: {
     id: 'programming',
     name: '💻 JavaScript Básico',
@@ -79,7 +18,7 @@ const SAMPLE_MODULES = {
     icon: '⚡',
     color: 'yellow',
     difficulty: 'beginner',
-    wordCount: 38,
+    wordCount: 2,
     categories: ['tecnologia', 'programacao', 'frontend'],
     author: 'CodeMaster',
     terms: [
