@@ -16,8 +16,27 @@ if (typeof window !== 'undefined') {
     appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
   };
 
-  app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-  database = getDatabase(app);
+  // Validar se as variáveis de ambiente estão configuradas
+  if (!firebaseConfig.projectId || !firebaseConfig.databaseURL) {
+    console.error(
+      'Erro: Variáveis de ambiente Firebase não estão configuradas.\n' +
+      'Por favor, adicione as seguintes variáveis no Vercel Dashboard > Settings > Environment Variables:\n' +
+      '- NEXT_PUBLIC_FIREBASE_API_KEY\n' +
+      '- NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN\n' +
+      '- NEXT_PUBLIC_FIREBASE_DATABASE_URL\n' +
+      '- NEXT_PUBLIC_FIREBASE_PROJECT_ID\n' +
+      '- NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET\n' +
+      '- NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID\n' +
+      '- NEXT_PUBLIC_FIREBASE_APP_ID'
+    );
+  } else {
+    try {
+      app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+      database = getDatabase(app);
+    } catch (error) {
+      console.error('Erro ao inicializar Firebase:', error);
+    }
+  }
 }
 
 export { app, database };
