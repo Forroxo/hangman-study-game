@@ -13,9 +13,9 @@ export const createRoom = async (moduleId, moduleName, terms, hostName) => {
   const hostId = `player_${Date.now()}`;
   const roomRef = ref(database, `rooms/${roomCode}`);
   
-  // Seleciona 10 termos aleatórios (MESMOS para todos)
+  // Seleciona 20 termos aleatórios (MESMOS para todos)
   const shuffled = [...terms].sort(() => 0.5 - Math.random());
-  const selectedTerms = shuffled.slice(0, Math.min(10, terms.length));
+  const selectedTerms = shuffled.slice(0, Math.min(20, terms.length));
   
   // ✅ NOVO: Cada jogador tem seu próprio estado de jogo
   const playerGameState = {
