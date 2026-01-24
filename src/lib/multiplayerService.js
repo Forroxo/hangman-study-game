@@ -248,9 +248,11 @@ export const deleteRoom = async (roomCode) => {
   await remove(ref(database, `rooms/${roomCode}`));
 };
 
-export const advanceToNextTerm = async (roomCode) => {
+// ✅ CORRIGIDO: Finaliza o jogo quando todos completarem
+// Cada jogador tem seu próprio progresso, então não há "avançar juntos"
+export const finishGameIfAllComplete = async (roomCode) => {
   if (!database) {
-    throw new Error('Firebase não está inicializado. Esta função deve ser chamada apenas no cliente.');
+    throw new Error('Firebase não está inicializado.');
   }
   try {
     const roomRef = ref(database, `rooms/${roomCode}`);
@@ -258,34 +260,40 @@ export const advanceToNextTerm = async (roomCode) => {
     
     if (snapshot.exists()) {
       const roomData = snapshot.val();
-      const nextIndex = roomData.currentTermIndex + 1;
+      const players = Object.values(roomData.players || {});
       
-      console.log(`Avançando para termo ${nextIndex + 1}/${roomData.terms.length}`);
+      // Verifica se todos completaram suas 10 palavras
+      const allFinished = players.every(p => p.currentTermIndex >= roomData.terms.length);
       
-      if (nextIndex >= roomData.terms.length) {
-        // Jogo terminou
-        console.log('Jogo finalizado');
+      if (allFinished) {
+        // ✅ Todos completaram! Finaliza o jogo
+        console.log('🎉 Todos jogadores completaram! Finalizando jogo...');
         await update(roomRef, {
           status: 'finished',
           finishedAt: Date.now()
         });
-      } else {
-        // Reseta o estado de completude dos jogadores
-        const players = roomData.players || {};
-        const updates = {};
-        
-        Object.keys(players).forEach(playerId => {
-          updates[`players/${playerId}/currentTermComplete`] = false;
-        });
-        
-        updates['currentTermIndex'] = nextIndex;
-        
-        await update(roomRef, updates);
-        console.log(`Avançado para termo ${nextIndex}`);
+        return true;
       }
     }
+    return false;
   } catch (error) {
-    console.error('Erro ao avançar termo:', error);
+    console.error('Erro ao finalizar jogo:', error);
+    return false;
+  }
+};
+
+export const advanceToNextTerm = async (roomCode) => {
+  if (!database) {
+    throw new Error('Firebase não está inicializado. Esta função deve ser chamada apenas no cliente.');
+  }
+  try {
+    // ✅ REFATORADO: Não mais avança termo compartilhado
+    // Apenas verifica se todos terminaram
+    const finished = await finishGameIfAllComplete(roomCode);
+    return finished;
+  } catch (error) {
+    console.error('Erro ao tentar finalizar:', error);
+    throw error;
   }
 };
 
@@ -303,10 +311,11 @@ export const checkAllPlayersComplete = async (roomCode) => {
       const roomData = snapshot.val();
       const players = Object.values(roomData.players || {});
       
-      // Verifica se todos completaram o termo atual
-      const allComplete = players.every(p => p.currentTermComplete === true);
+      // ✅ CORRIGIDO: Verifica se todos jogadores completaram suas 10 palavras
+      // Cada jogador avança independentemente
+      const allFinished = players.every(p => p.currentTermIndex >= roomData.terms.length);
       
-      return allComplete;
+      return allFinished;
     }
     return false;
   } catch (error) {

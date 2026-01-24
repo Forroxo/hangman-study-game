@@ -193,9 +193,9 @@ export default function MultiplayerRoomPage() {
       // Verifica se todos completaram
       const allComplete = await checkAllPlayersComplete(roomCode);
       
-      if (allComplete && currentPlayer?.isHost) {
-        // Se todos completaram e o usuário é host, avança
-        console.log('Todos completaram! Avançando...');
+      if (allComplete) {
+        // Se todos completaram, qualquer jogador pode finalizar
+        console.log('Todos completaram! Finalizando jogo...');
         await advanceToNextTerm(roomCode);
       }
     }, 2000);
@@ -431,6 +431,9 @@ export default function MultiplayerRoomPage() {
     const currentTerm = roomData.terms[playerTermIndex];
     const sortedPlayers = Object.values(roomData.players || {}).sort((a, b) => b.score - a.score);
 
+    // ✅ NOVO: Se o jogador terminou todos seus termos, mostra "aguardando"
+    const hasFinishedAllTerms = playerTermIndex >= roomData.terms.length;
+
     return (
       <Layout>
         <Head>
@@ -451,25 +454,35 @@ export default function MultiplayerRoomPage() {
                     <div className="text-sm opacity-90">seus pontos</div>
                   </div>
                 </div>
-                <div className="mt-4 flex items-center gap-4">
-                  <div className="flex-1 bg-white/20 rounded-full h-3 overflow-hidden">
-                    <div 
-                      className="h-full bg-white transition-all duration-300"
-                      style={{ width: `${((playerTermIndex + 1) / roomData.terms.length) * 100}%` }}
-                    />
+                {!hasFinishedAllTerms && (
+                  <div className="mt-4 flex items-center gap-4">
+                    <div className="flex-1 bg-white/20 rounded-full h-3 overflow-hidden">
+                      <div 
+                        className="h-full bg-white transition-all duration-300"
+                        style={{ width: `${((playerTermIndex + 1) / roomData.terms.length) * 100}%` }}
+                      />
+                    </div>
+                    <span className="font-medium">{playerTermIndex + 1}/{roomData.terms.length}</span>
                   </div>
-                  <span className="font-medium">{playerTermIndex + 1}/{roomData.terms.length}</span>
-                </div>
+                )}
+                {hasFinishedAllTerms && (
+                  <div className="mt-4 p-4 bg-white/20 rounded-lg text-center">
+                    <p className="font-semibold">✅ Você terminou todos os {roomData.terms.length} termos!</p>
+                    <p className="text-sm opacity-90 mt-2">Aguardando outros jogadores finalizarem...</p>
+                  </div>
+                )}
               </div>
 
-              <HangmanGame 
-                term={currentTerm}
-                onGameEnd={handleGameEnd}
-                isMultiplayer={true}
-                roomCode={roomCode}
-                playerId={playerId}
-                roomData={roomData}
-              />
+              {!hasFinishedAllTerms && (
+                <HangmanGame 
+                  term={currentTerm}
+                  onGameEnd={handleGameEnd}
+                  isMultiplayer={true}
+                  roomCode={roomCode}
+                  playerId={playerId}
+                  roomData={roomData}
+                />
+              )}
             </div>
 
             <div className="lg:col-span-1">
