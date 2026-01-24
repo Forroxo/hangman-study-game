@@ -36,13 +36,16 @@ export default function HangmanGame({ term, onGameEnd, isMultiplayer = false, ro
 
   // ✅ NOVO: Reset quando termo muda (jogador avançou)
   useEffect(() => {
-    if (!isMultiplayer || !term) return;
-    
-    // Reset do estado local quando entra num novo termo
+    if (!term) return;
+
+    // Reset do estado local quando entra num novo termo (single e multiplayer)
     setGameStatus('playing');
     setWordInput('');
     setLetterInput('');
     setErrorMessage('');
+    setGuessedLetters([]);
+    setErrors(0);
+    setTimeSpent(0);
   }, [term?.id, isMultiplayer]);
 
   // Timer - NÃO deve triggar verificação de vitória
@@ -231,8 +234,9 @@ export default function HangmanGame({ term, onGameEnd, isMultiplayer = false, ro
   }, [gameStatus, isMultiplayer, guessedLetters, handleMultiplayerGuess]);
 
   const handleNext = () => {
-    if (onGameEnd && gameStatus === 'playing') {
-      onGameEnd(term.id, gameStatus, timeSpent);
+    if (onGameEnd && gameStatus !== 'playing') {
+      // Mantém assinatura consistente: (result, timeSpent)
+      onGameEnd(gameStatus, timeSpent);
     }
   };
 
