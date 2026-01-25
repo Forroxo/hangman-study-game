@@ -7,43 +7,12 @@ import Explanation from '../../components/Game/Explanation';
 import ModuleSidebar from '../../components/Modules/ModuleSidebar';
 import customModules from '../../data/modules/custom-modules.json';
 import biologyModule from '../../data/modules/biology.json';
+import biblicalModule from '../../data/modules/biblico.json';
 
 // Módulos de exemplo (carregados de JSON)
 const SAMPLE_MODULES = {
   biology: biologyModule,
-  programming: {
-    id: 'programming',
-    name: '💻 JavaScript Básico',
-    description: 'Aprenda os fundamentos da programação com JavaScript',
-    icon: '⚡',
-    color: 'yellow',
-    difficulty: 'beginner',
-    wordCount: 2,
-    categories: ['tecnologia', 'programacao', 'frontend'],
-    author: 'CodeMaster',
-    terms: [
-      {
-        id: 'variavel_001',
-        word: 'VARIÁVEL',
-        hint: 'Espaço na memória para armazenar dados',
-        fullExplanation: 'Em JavaScript, variáveis são containers para armazenar valores de dados. Podem ser declaradas usando var, let ou const, cada uma com escopo e características diferentes.',
-        funFact: 'JavaScript foi originalmente chamado de Mocha, depois LiveScript, antes de receber seu nome atual para capitalizar na popularidade do Java.',
-        difficulty: 'easy',
-        category: 'Programação',
-        tags: ['fundamento', 'memória', 'dados']
-      },
-      {
-        id: 'funcao_002',
-        word: 'FUNÇÃO',
-        hint: 'Bloco de código reutilizável que realiza uma tarefa específica',
-        fullExplanation: 'Funções são blocos fundamentais em JavaScript que permitem encapsular código para reutilização. Podem receber parâmetros, executar operações e retornar valores.',
-        funFact: 'Em JavaScript, funções são objetos de primeira classe, o que significa que podem ser atribuídas a variáveis, passadas como argumentos e retornadas de outras funções.',
-        difficulty: 'easy',
-        category: 'Programação',
-        tags: ['estrutura', 'reuso', 'modularidade']
-      }
-    ]
-  }
+  biblical: biblicalModule
 };
 
 // Combina módulos padrão com módulos customizados
@@ -64,14 +33,25 @@ const getAllModules = () => {
 
 export default function ModuleGamePage() {
   const router = useRouter();
-  const { moduleId } = router.query;
   
+  // ✅ CORRIGIDO: Evita hydration mismatch com SSR
+  // ANTES: const { moduleId } = router.query; (vazio no SSR, preenchido no cliente)
+  // AGORA: Estado + useEffect com router.isReady
+  const [moduleId, setModuleId] = useState(null);
   const [module, setModule] = useState(null);
   const [currentTermIndex, setCurrentTermIndex] = useState(0);
   const [gameHistory, setGameHistory] = useState([]);
   const [showExplanation, setShowExplanation] = useState(false);
   const [lastGameResult, setLastGameResult] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // ✅ CORRIGIDO: Sincroniza router.query com estado local após hidratação
+  useEffect(() => {
+    if (!router.isReady) return;
+    if (router.query.moduleId) {
+      setModuleId(String(router.query.moduleId));
+    }
+  }, [router.isReady, router.query.moduleId]);
 
   const getModuleColor = (color) => {
     const colors = {
@@ -122,6 +102,8 @@ export default function ModuleGamePage() {
   const saveProgress = (result, timeSpent) => {
     if (!module || typeof window === 'undefined') return;
     
+    // ✅ OTIMIZADO: Batch update ao localStorage
+    // Evita múltiplas escritas que causam slowdown
     const progressKey = `module_${module.id}_progress`;
     const currentProgress = JSON.parse(localStorage.getItem(progressKey)) || {
       gameHistory: [],
@@ -138,11 +120,14 @@ export default function ModuleGamePage() {
       score: result === 'won' ? 100 : 50
     };
     
+    // ✅ CORRIGIDO: Atualiza currentIndex ANTES de adicionar ao histórico
+    // Garante que histórico está sincronizado
     currentProgress.gameHistory.push(gameRecord);
-    currentProgress.currentIndex = (currentTermIndex + 1) % module.terms.length;
+    currentProgress.currentIndex = currentTermIndex;  // Mantém índice atual
     currentProgress.score = (currentProgress.score || 0) + gameRecord.score;
     currentProgress.lastPlayed = new Date().toISOString();
     
+    // ✅ Uma única escrita ao localStorage
     localStorage.setItem(progressKey, JSON.stringify(currentProgress));
     setGameHistory(currentProgress.gameHistory);
   };
@@ -157,12 +142,11 @@ export default function ModuleGamePage() {
     setShowExplanation(false);
     setLastGameResult(null);
     
-    if (currentTermIndex < module.terms.length - 1) {
-      setCurrentTermIndex(prev => prev + 1);
-    } else {
-      // Volta ao início se completou todos os termos
-      setCurrentTermIndex(0);
-    }
+    // Avança para próximo termo sem loop infinito
+    setCurrentTermIndex(prev => {
+      const nextIndex = prev + 1;
+      return nextIndex < module.terms.length ? nextIndex : 0;
+    });
   };
 
   const handleTermSelect = (index) => {

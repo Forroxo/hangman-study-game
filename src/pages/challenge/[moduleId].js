@@ -3,11 +3,14 @@ import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Layout from '../../components/Layout/Layout';
 import HangmanGame from '../../components/Game/HangmanGame';
+import SessionReport from '../../components/Game/SessionReport';
 import customModules from '../../data/modules/custom-modules.json';
 import biologyModule from '../../data/modules/biology.json';
+import biblicalModule from '../../data/modules/biblico.json';
 
 const SAMPLE_MODULES = {
   biology: biologyModule,
+  biblical: biblicalModule,
   programming: {
     id: 'programming',
     name: '💻 JavaScript Básico',
@@ -45,8 +48,9 @@ const getAllModules = () => {
 
 export default function ChallengePage() {
   const router = useRouter();
-  const { moduleId } = router.query;
   
+  // ✅ CORRIGIDO: Evita hydration mismatch com SSR
+  const [moduleId, setModuleId] = useState(null);
   const [module, setModule] = useState(null);
   const [challengeTerms, setChallengeTerms] = useState([]);
   const [selectedCount, setSelectedCount] = useState(10);
@@ -58,28 +62,38 @@ export default function ChallengePage() {
   const [challengeComplete, setChallengeComplete] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // ✅ CORRIGIDO: Sincroniza router.query com estado local após hidratação
   useEffect(() => {
-    if (moduleId && started) {
-      loadChallenge(moduleId, selectedCount);
+    if (!router.isReady) return;
+    if (router.query.moduleId) {
+      setModuleId(String(router.query.moduleId));
     }
-  }, [moduleId, started]);
+  }, [router.isReady, router.query.moduleId]);
 
-  const loadChallenge = (id, count = 10) => {
+  // ✅ CORRIGIDO: Carrega o módulo quando moduleId muda
+  // Isso garante que a página não fica em carregamento infinito
+  useEffect(() => {
+    if (!moduleId) return;
+    
     setLoading(true);
     const allModules = getAllModules();
-    const loadedModule = allModules[id];
+    const loadedModule = allModules[moduleId];
     
     if (loadedModule && loadedModule.terms) {
-      const shuffled = [...loadedModule.terms].sort(() => 0.5 - Math.random());
-      const selected = shuffled.slice(0, Math.min(count, shuffled.length));
-      
       setModule(loadedModule);
-      setChallengeTerms(selected);
-      setLoading(false);
-    } else {
-      router.push('/modules');
     }
-  };
+    setLoading(false);
+  }, [moduleId]);
+
+  // ✅ Carrega os termos do desafio quando started = true
+  useEffect(() => {
+    if (!started || !module || !module.terms) return;
+    
+    const shuffled = [...module.terms].sort(() => 0.5 - Math.random());
+    const selected = shuffled.slice(0, Math.min(selectedCount, shuffled.length));
+    setChallengeTerms(selected);
+    setCurrentIndex(0);
+  }, [started, selectedCount]);
 
   const handleGameEnd = (result, timeSpent) => {
     const score = result === 'won' ? 100 : 0;
@@ -148,76 +162,30 @@ export default function ChallengePage() {
   }
 
   if (challengeComplete) {
-    const correctCount = results.filter(r => r.result === 'won').length;
-    const accuracy = Math.round((correctCount / challengeTerms.length) * 100);
-
+    // Monta histórico detalhado para o relatório
+    const sessionHistory = challengeTerms.map((term, idx) => {
+      const result = results[idx];
+      return {
+        word: term.word,
+        status: result?.result || 'lost',
+        term: term,
+        timeSpent: result?.timeSpent || 0,
+        errors: result?.errors || 0
+      };
+    });
     return (
       <Layout>
         <Head>
           <title>Desafio Completo! - StudyHangman</title>
         </Head>
-
-        <div className="max-w-3xl mx-auto">
-          <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
-            <div className="text-6xl mb-4">
-              {accuracy >= 80 ? '🏆' : accuracy >= 50 ? '🎯' : '📚'}
-            </div>
-            
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Desafio Completo!
-            </h1>
-            <p className="text-xl text-gray-600 mb-8">
-              {module.name}
-            </p>
-
-            <div className="grid grid-cols-3 gap-6 mb-8">
-              <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6">
-                <div className="text-3xl font-bold text-green-700">
-                  {correctCount}/{challengeTerms.length}
-                </div>
-                <div className="text-sm text-gray-600">Acertos</div>
-              </div>
-              
-              <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6">
-                <div className="text-3xl font-bold text-blue-700">{totalScore}</div>
-                <div className="text-sm text-gray-600">Pontos</div>
-              </div>
-              
-              <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-6">
-                <div className="text-3xl font-bold text-purple-700">
-                  {Math.floor(totalTime / 60)}:{(totalTime % 60).toString().padStart(2, '0')}
-                </div>
-                <div className="text-sm text-gray-600">Tempo</div>
-              </div>
-            </div>
-
-            <div className="bg-gray-50 rounded-xl p-6 mb-8">
-              <h3 className="font-semibold text-gray-800 mb-4">Desempenho por Termo</h3>
-              <div className="space-y-2">
-                {results.map((result, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-white rounded-lg">
-                    <span className="text-gray-700">Termo {index + 1}</span>
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm text-gray-500">
-                        {Math.floor(result.timeSpent / 60)}:{(result.timeSpent % 60).toString().padStart(2, '0')}
-                      </span>
-                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        result.result === 'won' 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {result.result === 'won' ? '✓ Acertou' : '✗ Errou'}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex gap-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-white rounded-2xl shadow-xl p-8 text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Desafio Completo!</h1>
+            <p className="text-xl text-gray-600 mb-4">{module.name}</p>
+            <div className="flex gap-4 justify-center mb-4">
               <button
                 onClick={shareResults}
-                className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:opacity-90 transition-opacity font-medium"
+                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:opacity-90 transition-opacity font-medium"
               >
                 📤 Compartilhar Resultado
               </button>
@@ -228,13 +196,21 @@ export default function ChallengePage() {
                 🔄 Tentar Novamente
               </button>
             </div>
-
             <button
               onClick={() => router.push('/modules')}
-              className="mt-4 text-gray-600 hover:text-gray-800 underline"
+              className="mt-2 text-gray-600 hover:text-gray-800 underline"
             >
               ← Voltar para módulos
             </button>
+          </div>
+          {/* Relatório detalhado de todos os termos */}
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">Relatório de Aprendizado</h2>
+            <div className="bg-gray-50 rounded-xl p-4">
+              <div className="space-y-6">
+                <SessionReport history={sessionHistory} onClose={() => router.push('/modules')} />
+              </div>
+            </div>
           </div>
         </div>
       </Layout>
@@ -274,13 +250,15 @@ export default function ChallengePage() {
                 </select>
                 <button
                   onClick={() => {
-                    if (!moduleId) return;
+                    if (!moduleId || !module) return;
+                    // ✅ SIMPLIFICADO: Apenas ativa started
+                    // Os termos são carregados automaticamente pelo useEffect
                     setStarted(true);
-                    loadChallenge(moduleId, selectedCount);
                   }}
                   className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                  disabled={!module || loading}
                 >
-                  Iniciar
+                  {loading ? 'Carregando...' : 'Iniciar'}
                 </button>
               </div>
             </div>

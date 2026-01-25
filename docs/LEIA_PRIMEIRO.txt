@@ -1,0 +1,1 @@
+LEIA PRIMEIRO: Documentação e instruções do projeto agora estão em /docs.

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import HangmanDrawing from './HangmanDrawing';
 import WordDisplay from './WordDisplay';
 import GameStatus from './GameStatus';
+import SessionReport from './SessionReport';
 import { normalizeText, compareWords } from '../../lib/textUtils';
 import { submitGuess } from '../../lib/multiplayerService';
 
@@ -15,6 +16,8 @@ export default function HangmanGame({ term, onGameEnd, isMultiplayer = false, ro
   const [letterInput, setLetterInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [history, setHistory] = useState([]);
+  const [showReport, setShowReport] = useState(false);
 
   // ✅ CORRIGIDO: Sincroniza guessedLetters SEMPRE que playerData muda
   // ANTES: useEffect só rodava quando roomData mudava (insuficiente)
@@ -35,7 +38,8 @@ export default function HangmanGame({ term, onGameEnd, isMultiplayer = false, ro
     }
   }, [roomData?.players?.[playerId], isMultiplayer, playerId, roomData?.terms?.length]);
 
-  // ✅ NOVO: Reset quando termo muda (jogador avançou)
+  // ✅ CORRIGIDO: Reset quando termo muda (jogador avançou)
+  // Removido isMultiplayer da dependency array para evitar reset múltiplo
   useEffect(() => {
     if (!term) return;
 
@@ -47,7 +51,7 @@ export default function HangmanGame({ term, onGameEnd, isMultiplayer = false, ro
     setGuessedLetters([]);
     setErrors(0);
     setTimeSpent(0);
-  }, [term?.id, isMultiplayer]);
+  }, [term?.id]);
 
   // Timer - NÃO deve triggar verificação de vitória
   useEffect(() => {
@@ -106,11 +110,11 @@ export default function HangmanGame({ term, onGameEnd, isMultiplayer = false, ro
       const result = await submitGuess(roomCode, playerId, guess);
       
       if (result) {
-        console.log('✅ Palpite enviado com sucesso');
-        // Estado será sincronizado pelo listener do Firebase
+        // ✅ Estado será sincronizado pelo listener do Firebase
+        // Removido console.log para melhorar performance
       } else {
         // Transação foi cancelada (pode ser duplicada)
-        console.log('⚠️ Palpite já processado ou jogo não ativo');
+        // Removido console.log para melhorar performance
       }
     } catch (error) {
       console.error('❌ Erro ao enviar palpite:', error);
@@ -143,53 +147,37 @@ export default function HangmanGame({ term, onGameEnd, isMultiplayer = false, ro
   const handleWordGuess = (e) => {
     e.preventDefault();
     if (gameStatus !== 'playing' || !wordInput.trim()) return;
-    
+
     const normalizedInput = normalizeText(wordInput).trim();
     const normalizedWord = normalizeText(term.word).trim();
-    
-    // ✅ CORRIGIDO: Rejeitar palpites com menos de 2 caracteres
-    // Evita que "U" seja considerado um palpite de palavra válido
+
     if (normalizedInput.length < 2) {
       setErrorMessage('A palavra deve ter pelo menos 2 letras!');
       setWordInput('');
       setTimeout(() => setErrorMessage(''), 3000);
       return;
     }
-    
-    console.log('Palpite de palavra:', {
-      input: normalizedInput,
-      term: normalizedWord,
-      termId: term.id,
-      match: normalizedInput === normalizedWord
-    });
-    
+
     if (isMultiplayer) {
       // Modo multiplayer: usa transação com palavra normalizada
-      // Mas também valida comprimento
-      if (normalizedInput.length >= 2) {
-        handleMultiplayerGuess(normalizedInput);
-      } else {
-        setErrorMessage('A palavra deve ter pelo menos 2 letras!');
-        setWordInput('');
-        setTimeout(() => setErrorMessage(''), 3000);
-      }
+      handleMultiplayerGuess(normalizedInput);
+      // O estado será sincronizado pelo Firebase, não setar erro localmente
     } else {
-      // Modo single-player
+      // Modo single-player: só uma tentativa
       if (normalizedInput === normalizedWord) {
         // Acertou a palavra completa
         const allLetters = [...new Set(normalizedWord.replace(/[^A-Z]/g, ''))];
         setGuessedLetters(allLetters);
-        setWordInput('');
+        setGameStatus('won');
+        onGameEnd?.('won', timeSpent);
       } else {
-        // Errou - conta como erro
-        setErrors(prev => prev + 1);
-        setWordInput('');
-        
-        if (errors + 1 >= 6) {
+        setErrors(6);
+        setTimeout(() => {
           setGameStatus('lost');
           onGameEnd?.('lost', timeSpent);
-        }
+        }, 600);
       }
+      setWordInput('');
     }
   };
 
@@ -239,8 +227,20 @@ export default function HangmanGame({ term, onGameEnd, isMultiplayer = false, ro
   }, [gameStatus, isMultiplayer, guessedLetters, handleMultiplayerGuess]);
 
   const handleNext = () => {
+    if (gameStatus !== 'playing') {
+      // Sempre adiciona o termo ao histórico, com explicação e dados completos
+      setHistory(prev => [
+        ...prev,
+        {
+          word: term.word,
+          status: gameStatus,
+          term: term,
+          timeSpent: timeSpent,
+          errors: errors
+        }
+      ]);
+    }
     if (onGameEnd && gameStatus !== 'playing') {
-      // Mantém assinatura consistente: (result, timeSpent)
       onGameEnd(gameStatus, timeSpent);
     }
   };
@@ -256,49 +256,68 @@ export default function HangmanGame({ term, onGameEnd, isMultiplayer = false, ro
   return (
     <div className="max-w-4xl mx-auto p-4 bg-white rounded-2xl shadow-lg">
       {/* Header */}
-      <div className="flex justify-between items-center mb-4 md:mb-6">
-        <div>
-          <h2 className="text-xl md:text-2xl font-bold text-gray-800">Jogo da Forca</h2>
-          <div className="flex items-center gap-2 md:gap-4 mt-2">
-            <div className="px-2 md:px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs md:text-sm">
-              Erros: {errors}/6
-            </div>
-            <div className="px-2 md:px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-xs md:text-sm">
-              Tempo: {Math.floor(timeSpent / 60)}:{(timeSpent % 60).toString().padStart(2, '0')}
-            </div>
+      <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-6 md:mb-8">Jogo da Forca</h2>
+
+      {/* Tempo e Corações acima da Dica */}
+      <div className="flex gap-2 md:gap-3 mb-3 md:mb-4">
+        <div className="px-2 md:px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-xs md:text-sm">
+          Tempo: {Math.floor(timeSpent / 60)}:{(timeSpent % 60).toString().padStart(2, '0')}
+        </div>
+        <div className="px-2 md:px-3 py-1 rounded-full text-xs md:text-sm flex items-center gap-1">
+          <div className="flex gap-0.5">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <span
+                key={`heart-${i}`}
+                className={
+                  i < errors
+                    ? "text-gray-300 opacity-40 transition-all duration-300"
+                    : "text-red-500 transition-all duration-300"
+                }
+                style={{ filter: i < errors ? 'grayscale(1)' : 'none' }}
+              >
+                ❤️
+              </span>
+            ))}
           </div>
+          <span className="text-xs text-gray-500 ml-2">{6 - errors} vidas restantes</span>
         </div>
       </div>
 
-      {/* Dica sempre visível */}
-      <div className="mb-4 md:mb-6 p-3 md:p-4 bg-blue-50 border-2 border-blue-300 rounded-lg">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-lg md:text-xl">💡</span>
-          <span className="font-semibold text-blue-900 text-sm md:text-base">Dica:</span>
+      {/* Dica e Controles de Tempo/Corações */}
+      <div className="flex gap-3 md:gap-4 mb-4 md:mb-6 items-start">
+        {/* Dica sempre visível */}
+        <div className="flex-1 p-3 md:p-4 bg-blue-50 border-2 border-blue-300 rounded-lg">
+          <div className="flex items-center gap-2">
+            <span className="text-lg md:text-xl">💡</span>
+            <span className="font-semibold text-blue-900 text-sm md:text-base">Dica:</span>
+          </div>
+          <p className="text-blue-800 font-medium text-base md:text-lg">{term.hint}</p>
         </div>
-        <p className="text-blue-800 font-medium text-base md:text-lg">{term.hint}</p>
       </div>
 
       {/* Jogo */}
-      <div className="flex flex-col md:flex-row gap-4 md:gap-8 items-center">
-        <div className="flex-1">
+      <div className="flex flex-col md:flex-row gap-2 md:gap-8 items-center">
+        <div className="flex-1 hidden md:block">
           <HangmanDrawing errors={errors} status={gameStatus} />
         </div>
         
-        <div className="flex-1">
+        <div className="flex-1 w-full md:w-auto">
           <WordDisplay 
             word={term.word}
             guessedLetters={guessedLetters}
             gameStatus={gameStatus}
           />
           
-          {gameStatus !== 'playing' && (
+          {/* Só mostra GameStatus se não for multiplayer, ou se for multiplayer e não for erro de palavra completa */}
+          {gameStatus !== 'playing' && (!isMultiplayer || (isMultiplayer && gameStatus !== 'lost')) && (
             <GameStatus 
               status={gameStatus}
               timeSpent={timeSpent}
               word={term.word}
+              term={term}
               onNext={handleNext}
               onReview={() => {}}
+              onShowReport={() => setShowReport(true)}
             />
           )}
         </div>
@@ -306,29 +325,30 @@ export default function HangmanGame({ term, onGameEnd, isMultiplayer = false, ro
 
       {/* Controles */}
       {gameStatus === 'playing' && (
-        <div className="mt-8 space-y-4">
-          {/* Mensagem de erro */}
+        <div className="mt-3 md:mt-8 space-y-1.5 md:space-y-4">
+          {/* Mensagem de erro - Visível e em vermelho no mobile */}
           {errorMessage && (
-            <div className="bg-red-50 border border-red-300 text-red-700 px-6 py-3 rounded-lg">
-              {errorMessage}
+            <div className="bg-red-600 border-4 border-red-800 text-white px-3 md:px-6 py-3 md:py-4 rounded-lg md:rounded-xl font-bold text-sm md:text-base shadow-lg animate-pulse">
+              <div className="flex items-center gap-2">
+                <span className="text-xl md:text-2xl">❌</span>
+                <span>{errorMessage}</span>
+              </div>
             </div>
           )}
           {/* Input para palavra completa */}
-          <form onSubmit={handleWordGuess} className="w-full bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-3 md:p-6 border-2 border-green-200 md:mb-4 md:max-h-40">
-            <label className="block text-xs md:text-sm font-semibold text-green-900 mb-2 md:mb-3">
-              💡 Sabe a palavra? Digite completa:
+          <form onSubmit={handleWordGuess} className="w-full bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg md:rounded-xl p-2 md:p-6 border-2 border-green-200">
+            <label className="block text-xs md:text-sm font-semibold text-green-900 mb-1 md:mb-3">
+              💡 Palavra:
             </label>
-            <div className="flex gap-2 md:gap-3">
+            <div className="flex gap-1 md:gap-3">
               <input
                 type="text"
                 value={wordInput}
                 onChange={(e) => {
-                  // ✅ PERMITIR digitação com acentos - será normalizado
-                  // O usuário pode digitar "café" e será aceito como "cafe"
                   setWordInput(e.target.value);
                 }}
-                placeholder="Digite a palavra completa..."
-                className="flex-1 px-3 md:px-4 py-2 md:py-3 border-2 border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm md:text-lg font-medium uppercase"
+                placeholder="Digite..."
+                className="flex-1 px-2 md:px-4 py-1.5 md:py-3 border-2 border-green-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-xs md:text-lg font-medium uppercase"
                 disabled={gameStatus !== 'playing'}
                 autoComplete="off"
                 inputMode="text"
@@ -337,22 +357,19 @@ export default function HangmanGame({ term, onGameEnd, isMultiplayer = false, ro
               <button
                 type="submit"
                 disabled={gameStatus !== 'playing' || !wordInput.trim()}
-                className="px-4 md:px-8 py-2 md:py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium text-xs md:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-2 md:px-8 py-1.5 md:py-3 bg-green-600 text-white rounded hover:bg-green-700 transition-colors font-medium text-xs md:text-base disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
               >
-                Tentar
+                OK
               </button>
             </div>
-            <p className="text-xs text-green-700 mt-2">
-              ⚠️ Cuidado! Se errar a palavra completa, conta como erro
-            </p>
           </form>
 
           {/* Input para letra */}
-          <form onSubmit={handleLetterGuess} className="w-full bg-gray-50 rounded-xl p-3 md:p-6 border border-gray-200">
-            <label className="block text-xs md:text-sm font-semibold text-gray-700 mb-2 md:mb-3">
-              🔤 Ou tente uma letra:
+          <form onSubmit={handleLetterGuess} className="w-full bg-gray-50 rounded-lg md:rounded-xl p-2 md:p-6 border border-gray-200">
+            <label className="block text-xs md:text-sm font-semibold text-gray-700 mb-1 md:mb-3">
+              🔤 Digite uma letra:
             </label>
-            <div className="flex gap-2 md:gap-3">
+            <div className="flex gap-1 md:gap-3">
               <input
                 type="text"
                 value={letterInput}
@@ -361,27 +378,29 @@ export default function HangmanGame({ term, onGameEnd, isMultiplayer = false, ro
                   const letter = normalized.slice(0, 1);
                   setLetterInput(letter);
                   
-                  // ✅ NOVO: Auto-submit quando digita uma letra
-                  // Em vez de esperar o botão, manda direto
                   if (letter && /^[A-Z]$/.test(letter) && gameStatus === 'playing') {
-                    // Pequeno delay para garantir que o estado foi atualizado
                     setTimeout(() => {
                       handleGuess(letter);
                     }, 0);
                   }
                 }}
-                placeholder="Digite uma letra..."
-                className="flex-1 px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-lg font-medium uppercase text-center"
+                placeholder="A-Z"
+                className="flex-1 px-2 md:px-4 py-1.5 md:py-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs md:text-lg font-medium uppercase text-center"
                 maxLength={1}
                 disabled={gameStatus !== 'playing'}
                 autoComplete="off"
               />
             </div>
-            <p className="text-xs text-gray-500 mt-2">
-              💡 Você também pode usar o teclado do seu computador/celular - a letra será enviada automaticamente
-            </p>
           </form>
         </div>
+      )}
+
+      {/* Relatório da Sessão */}
+      {showReport && (
+        <SessionReport 
+          history={history} 
+          onClose={() => setShowReport(false)}
+        />
       )}
     </div>
   );

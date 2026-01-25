@@ -392,21 +392,17 @@ export const submitGuess = async (roomCode, playerId, guess) => {
           playerData.wrongGuesses = 0;
           console.log(`✅ ${playerData.name} acertou a palavra! Próxima...`);
         } else {
-          // ❌ ERRO NA PALAVRA
-          playerData.wrongGuesses += 1;
-          if (playerData.wrongGuesses >= 6) {
-            // Jogador perdeu
-            playerData.completedTerms.push({
-              termId: currentTerm.id,
-              result: 'lost',
-              method: 'word_guess',
-              timestamp: Date.now()
-            });
-            playerData.currentTermIndex += 1;
-            playerData.guessedLetters = [];
-            playerData.wrongGuesses = 0;
-            console.log(`💀 ${playerData.name} perdeu esta rodada`);
-          }
+          // ❌ ERRO NA PALAVRA: apenas avança para a próxima palavra
+          playerData.completedTerms.push({
+            termId: currentTerm.id,
+            result: 'lost',
+            method: 'word_guess',
+            timestamp: Date.now()
+          });
+          playerData.currentTermIndex += 1;
+          playerData.guessedLetters = [];
+          playerData.wrongGuesses = 0;
+          console.log(`💀 ${playerData.name} errou a palavra! Próxima...`);
         }
       } else {
         // ✅ PALPITE DE LETRA (individual)

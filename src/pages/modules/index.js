@@ -4,6 +4,8 @@ import Layout from '../../components/Layout/Layout';
 import ModuleCard from '../../components/Modules/ModuleCard';
 import ModuleFilter from '../../components/Modules/ModuleFilter';
 import customModules from '../../data/modules/custom-modules.json';
+import biologyModule from '../../data/modules/biology.json';
+import biblicalModule from '../../data/modules/biblico.json';
 
 export default function ModulesPage() {
   const [modules, setModules] = useState([]);
@@ -26,111 +28,33 @@ export default function ModulesPage() {
   const loadModules = async () => {
     try {
       setLoading(true);
-      // Simula API call
+      // Simula API call - Apenas Biologia e Bíblico
       const sampleModules = [
         {
           id: 'biology',
           name: '🧬 Biologia Celular',
-          description: 'Explore organelas, processos celulares e genética básica',
+          description: 'Explore o mundo microscópico das células, organelas e processos vitais que sustentam a vida',
           icon: '🔬',
           color: 'green',
           difficulty: 'intermediate',
-          wordCount: 45,
-          categories: ['ciencias', 'biologia', 'vestibular'],
-          author: 'BioLearn',
-          createdAt: '2024-01-15',
-          rating: 4.8
+          wordCount: Array.isArray(biologyModule.terms) ? biologyModule.terms.length : 0,
+          categories: biologyModule.categories,
+          author: biologyModule.author,
+          createdAt: biologyModule.createdAt,
+          rating: biologyModule.rating
         },
         {
-          id: 'history-brazil',
-          name: '🏛️ História do Brasil',
-          description: 'Do descobrimento à república: fatos e personagens importantes',
-          icon: '📜',
-          color: 'red',
-          difficulty: 'intermediate',
-          wordCount: 52,
-          categories: ['humanas', 'historia', 'enem'],
-          author: 'História Viva',
-          createdAt: '2024-01-10',
-          rating: 4.6
-        },
-        {
-          id: 'javascript',
-          name: '💻 JavaScript Moderno',
-          description: 'Conceitos fundamentais e recursos modernos do JavaScript',
-          icon: '⚡',
-          color: 'yellow',
-          difficulty: 'beginner',
-          wordCount: 38,
-          categories: ['tecnologia', 'programacao', 'frontend'],
-          author: 'CodeMaster',
-          createdAt: '2024-01-20',
-          rating: 4.9
-        },
-        {
-          id: 'geography',
-          name: '🗺️ Geografia Mundial',
-          description: 'Países, capitais, relevo e aspectos socioeconômicos',
-          icon: '🌍',
+          id: 'biblical',
+          name: '📖 Conhecimento Bíblico',
+          description: 'Explore personagens, eventos, ensinamentos e curiosidades do Antigo e Novo Testamento',
+          icon: '✝️',
           color: 'blue',
           difficulty: 'intermediate',
-          wordCount: 48,
-          categories: ['humanas', 'geografia'],
-          author: 'GeoExpert',
-          createdAt: '2024-01-05',
-          rating: 4.5
-        },
-        {
-          id: 'chemistry',
-          name: '⚗️ Química Orgânica',
-          description: 'Funções orgânicas, reações e nomenclatura',
-          icon: '🧪',
-          color: 'purple',
-          difficulty: 'advanced',
-          wordCount: 56,
-          categories: ['ciencias', 'quimica', 'vestibular'],
-          author: 'ChemLab',
-          createdAt: '2024-01-12',
-          rating: 4.7
-        },
-        {
-          id: 'english',
-          name: '🔤 Inglês Intermediário',
-          description: 'Vocabulário avançado e expressões idiomáticas',
-          icon: '🇺🇸',
-          color: 'indigo',
-          difficulty: 'intermediate',
-          wordCount: 42,
-          categories: ['linguagens', 'ingles', 'idiomas'],
-          author: 'EnglishPro',
-          createdAt: '2024-01-18',
-          rating: 4.8
-        },
-        {
-          id: 'physics',
-          name: '⚡ Física Clássica',
-          description: 'Mecânica, termodinâmica e eletromagnetismo',
-          icon: '🌀',
-          color: 'blue',
-          difficulty: 'advanced',
-          wordCount: 58,
-          categories: ['ciencias', 'fisica', 'enem'],
-          author: 'Física Total',
-          createdAt: '2024-01-08',
-          rating: 4.4
-        },
-        {
-          id: 'philosophy',
-          name: '🤔 Filosofia Ocidental',
-          description: 'Pensadores clássicos e escolas filosóficas',
-          icon: '💭',
-          color: 'gray',
-          difficulty: 'intermediate',
-          wordCount: 40,
-          categories: ['humanas', 'filosofia'],
-          author: 'Penso Logo Existo',
-          createdAt: '2024-01-22',
-          rating: 4.6
+          wordCount: Array.isArray(biblicalModule.terms) ? biblicalModule.terms.length : 0,
+          categories: biblicalModule.categories,
+          author: biblicalModule.author,
+          createdAt: biblicalModule.createdAt,
+          rating: biblicalModule.rating
         }
       ];
 

@@ -5,9 +5,19 @@ import Layout from '../../components/Layout/Layout';
 
 export default function SharePage() {
   const router = useRouter();
-  const { moduleId } = router.query;
+  
+  // ✅ CORRIGIDO: Evita hydration mismatch com SSR
+  const [moduleId, setModuleId] = useState(null);
   const [challengeUrl, setChallengeUrl] = useState('');
   const [copied, setCopied] = useState(false);
+
+  // ✅ CORRIGIDO: Sincroniza router.query com estado local após hidratação
+  useEffect(() => {
+    if (!router.isReady) return;
+    if (router.query.moduleId) {
+      setModuleId(String(router.query.moduleId));
+    }
+  }, [router.isReady, router.query.moduleId]);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && moduleId) {

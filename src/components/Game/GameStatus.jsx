@@ -1,4 +1,4 @@
-export default function GameStatus({ status, timeSpent, word, onNext, onReview }) {
+export default function GameStatus({ status, timeSpent, word, term, onNext, onReview, onShowReport }) {
   if (!status || status === 'playing') return null;
 
   const getStatusConfig = () => {
@@ -85,17 +85,34 @@ export default function GameStatus({ status, timeSpent, word, onNext, onReview }
         </div>
       </div>
 
+      {/* Explicação Completa */}
+      {term && (
+        <div className="bg-white rounded-lg p-4 mb-6 border-l-4 border-blue-500">
+          <div className="mb-4">
+            <h4 className="text-lg font-bold text-gray-800 mb-2">📚 O que você aprendeu:</h4>
+            <p className="text-gray-700 leading-relaxed">{term.fullExplanation}</p>
+          </div>
+          
+          {term.funFact && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mt-4">
+              <h5 className="font-semibold text-amber-900 mb-2">💡 Curiosidade interessante:</h5>
+              <p className="text-amber-900">{term.funFact}</p>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="flex flex-wrap gap-3 justify-center">
         <button
-          onClick={onReview}
-          className={`px-6 py-3 ${config.buttonBg} text-white rounded-lg ${config.buttonHover} transition-colors`}
+          onClick={onShowReport}
+          className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
         >
-          Ver Explicação Completa
+          📚 Ver Relatório
         </button>
         
         <button
           onClick={onNext}
-          className="px-6 py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors"
+          className={`px-6 py-3 ${config.buttonBg} text-white rounded-lg ${config.buttonHover} transition-colors`}
         >
           Próxima Palavra
         </button>

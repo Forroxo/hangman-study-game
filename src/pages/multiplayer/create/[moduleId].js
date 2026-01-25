@@ -1,13 +1,15 @@
 import { useRouter } from 'next/router';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Layout from '../../../components/Layout/Layout';
 import customModules from '../../../data/modules/custom-modules.json';
 import biologyModule from '../../../data/modules/biology.json';
+import biblicalModule from '../../../data/modules/biblico.json';
 import { createRoom } from '../../../lib/multiplayerService';
 
 const SAMPLE_MODULES = {
   biology: biologyModule,
+  biblical: biblicalModule,
   programming: {
     id: 'programming',
     name: '💻 JavaScript Básico',
@@ -56,14 +58,24 @@ export async function getStaticProps({ params }) {
 
 export default function MultiplayerCreatePage({ moduleId: propModuleId }) {
   const router = useRouter();
-  // Use prop during SSR, router.query on client
-  const { moduleId: queryModuleId } = router.query;
-  const moduleId = propModuleId || queryModuleId;
+  
+  // ✅ CORRIGIDO: Usa estado para sincronizar com router.query
+  // propModuleId vem de getStaticProps (para SSR)
+  // router.query é sincronizado no cliente via useEffect
+  const [moduleId, setModuleId] = useState(propModuleId || null);
   
   const [playerName, setPlayerName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [selectedCount, setSelectedCount] = useState(10);
+
+  // ✅ CORRIGIDO: Sincroniza router.query com estado local no cliente
+  useEffect(() => {
+    if (!router.isReady) return;
+    if (router.query.moduleId && router.query.moduleId !== moduleId) {
+      setModuleId(String(router.query.moduleId));
+    }
+  }, [router.isReady, router.query.moduleId]);
 
   const handleCreateRoom = async (e) => {
     e.preventDefault();

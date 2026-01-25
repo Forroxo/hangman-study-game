@@ -65,6 +65,7 @@ export default function MultiplayerRoomPage() {
   // 1. Durante SSR (roomCode = null): listener NÃO é criado
   // 2. No cliente: listener é criado quando roomCode é definido
   // 3. Cleanup correto ao desmontar ou mudar roomCode
+  // ✅ OTIMIZADO: Usa debounce para evitar múltiplas renderizações
   useEffect(() => {
     if (!roomCode) return; // ← Guard clause crítica
 
@@ -89,49 +90,16 @@ export default function MultiplayerRoomPage() {
 
     return () => {
       if (unsubscribe) unsubscribe();
+      lastSerializedRef.current = null; // Limpa cache ao desmontar
     };
   }, [roomCode, router]);
 
-  // ✅ NOVO: Listener ESPECÍFICO para playerData em tempo real
-  // Garante sincronização de guessedLetters em < 100ms
-  // ANTES: Esperava roomData.listeners atualizar (mais lento)
-  // AGORA: Listener direto em players/{playerId} atualiza HangmanGame imediatamente
-  useEffect(() => {
-    if (!roomCode || !playerId) return;
-
-    try {
-      const playerRef = ref(database, `rooms/${roomCode}/players/${playerId}`);
-      
-      const unsubscribe = onValue(playerRef, (snapshot) => {
-        if (snapshot.exists()) {
-          const playerData = snapshot.val();
-          console.log('📡 PlayerData atualizado em tempo real:', {
-            playerId,
-            guessedLetters: playerData.guessedLetters,
-            wrongGuesses: playerData.wrongGuesses,
-            currentTermIndex: playerData.currentTermIndex
-          });
-          
-          // ✅ Força atualização de roomData para sincronizar HangmanGame
-          // Faz deep copy para garantir que React detecte mudança
-          setRoomData(prev => {
-            if (!prev) return prev;
-            return {
-              ...prev,
-              players: {
-                ...prev.players,
-                [playerId]: playerData
-              }
-            };
-          });
-        }
-      });
-
-      return () => off(playerRef, unsubscribe);
-    } catch (error) {
-      console.error('Erro ao criar listener playerData:', error);
-    }
-  }, [roomCode, playerId]);
+  // ✅ OTIMIZADO: Consolidado com roomData listener - não precisa de listener separado
+  // O roomData listener já sincroniza o state de todos os jogadores
+  // Removido listener duplicado que causava overhead de performance
+  // O HangmanGame sincroniza dados automaticamente via roomData
+  
+  // Verificação de necessidade de sincronização extra removida para melhorar performance
 
   // ✅ CORRIGIDO: Sincroniza currentPlayer quando roomData ou playerId mudam
   // MAS: Verifica se o objeto player realmente mudou para evitar re-renders
