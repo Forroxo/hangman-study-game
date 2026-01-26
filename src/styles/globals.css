@@ -1,3 +1,21 @@
+/* Reduz lacunas/letras automaticamente se a palavra for muito longa em telas grandes */
+.word-auto-shrink {
+  max-width: 100%;
+}
+@media (min-width: 900px) {
+  .word-auto-shrink {
+    max-width: 900px;
+  }
+  .word-auto-shrink .flex-col.items-center > div:first-child {
+    font-size: clamp(0.7rem, 2vw, 1.5rem) !important;
+    width: clamp(18px, 3vw, 48px) !important;
+    height: clamp(22px, 3vw, 56px) !important;
+  }
+  .word-auto-shrink .flex-col.items-center > div:last-child {
+    width: clamp(18px, 3vw, 48px) !important;
+    height: 2px !important;
+  }
+}
 /* Permite quebra de linha apenas entre palavras (em espaços) em telas pequenas */
 .word-break-on-space {
   flex-wrap: wrap !important;

@@ -60,7 +60,7 @@ export default function WordDisplay({ word, guessedLetters, gameStatus, small = 
         </div>
       </div>
       
-      <div className="flex flex-wrap justify-center gap-x-8 gap-y-2 md:gap-x-12 md:gap-y-3 mb-3 md:mb-8 word-break-on-space mx-auto w-full max-w-2xl">
+      <div className="flex flex-wrap justify-center gap-x-8 gap-y-2 md:gap-x-12 md:gap-y-3 mb-3 md:mb-8 word-break-on-space mx-auto w-full max-w-2xl word-auto-shrink">
         {originalWord.split(' ').map((wordBlock, wordIdx) => (
           <div key={wordIdx} className="flex flex-nowrap mb-1">
             {wordBlock.split('').map((letter, index) => (

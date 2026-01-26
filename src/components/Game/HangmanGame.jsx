@@ -77,18 +77,19 @@ export default function HangmanGame({ term, onGameEnd, isMultiplayer = false, ro
     
     // ✅ SINGLE-PLAYER APENAS: Determina win/loss localmente
     const normalizedWord = normalizeText(term.word);
-    const uniqueLetters = [...new Set(normalizedWord.replace(/[^A-Z]/g, ''))];
-    
+    // Inclui letras e números como obrigatórios
+    const uniqueChars = [...new Set(normalizedWord.split(''))];
+
     // Verifica vitória
-    const hasWon = uniqueLetters.every(letter => 
-      guessedLetters.includes(letter)
+    const hasWon = uniqueChars.every(char => 
+      guessedLetters.includes(char)
     );
-    
+
     // Verifica derrota (6 erros)
     const wrongGuesses = guessedLetters.filter(
-      letter => !normalizedWord.includes(letter)
+      char => !normalizedWord.includes(char)
     ).length;
-    
+
     if (hasWon) {
       setGameStatus('won');
       onGameEnd?.('won', timeSpent);

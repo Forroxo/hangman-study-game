@@ -4,8 +4,8 @@ export const normalizeText = (text) => {
   return text
     .toUpperCase()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '') // Remove acentos
-    .replace(/[^A-Z]/g, ''); // Remove TUDO que não é A-Z (incluindo espaços)
+      .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+      .replace(/[^A-Z0-9]/g, ''); // Permite letras e números, remove o resto
 };
 
 // ✅ NOVO: Versão que preserve espaços para display
@@ -15,8 +15,8 @@ export const normalizeTextWithSpaces = (text) => {
   return text
     .toUpperCase()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '') // Remove acentos
-    .replace(/[^A-Z\s]/g, ''); // Remove tudo exceto A-Z e espaços
+      .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+      .replace(/[^A-Z0-9\s]/g, ''); // Permite letras, números e espaços
 };
 
 export const compareWords = (word1, word2) => {
