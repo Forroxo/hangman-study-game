@@ -1,6 +1,6 @@
 import { normalizeText, normalizeTextWithSpaces } from '../../lib/textUtils';
 
-export default function WordDisplay({ word, guessedLetters, gameStatus }) {
+export default function WordDisplay({ word, guessedLetters, gameStatus, small = false }) {
   const displayWord = normalizeTextWithSpaces(word) || '';
   const originalWord = word?.toUpperCase() || '';
   const normalizedWord = normalizeText(word) || '';
@@ -13,12 +13,14 @@ export default function WordDisplay({ word, guessedLetters, gameStatus }) {
     const shouldReveal = gameStatus === 'lost' || gameStatus === 'won';
     
     return (
-      <div key={index} className="flex flex-col items-center mx-0.5">
+      <div key={index} className={`flex flex-col items-center mx-0.5 ${small ? 'gap-0' : ''}`}>
         <div
           className={`
-            w-6 md:w-12 h-7 md:h-14 flex items-center justify-center
-            text-sm md:text-3xl font-bold
-            border-b-2 md:border-b-4
+            w-5 h-6 text-xs border-b
+            sm:w-6 sm:h-7 sm:text-sm sm:border-b-2
+            md:w-12 md:h-14 md:text-3xl md:border-b-4
+            flex items-center justify-center
+            font-bold
             transition-all duration-300
             ${isGuessed || shouldReveal
               ? 'text-gray-800 border-blue-500'
@@ -28,7 +30,7 @@ export default function WordDisplay({ word, guessedLetters, gameStatus }) {
         >
           {(isGuessed || shouldReveal) ? originalWord[index] : '?'}
         </div>
-        <div className="w-6 md:w-12 h-0.5 md:h-1 bg-gray-200 mt-0.5 md:mt-1"></div>
+        <div className="w-5 h-0.5 sm:w-6 sm:h-0.5 md:w-12 md:h-1 bg-gray-200 mt-0.5 md:mt-1"></div>
       </div>
     );
   };
@@ -58,10 +60,14 @@ export default function WordDisplay({ word, guessedLetters, gameStatus }) {
         </div>
       </div>
       
-      <div className="flex flex-wrap justify-center gap-0.5 md:gap-1 mb-3 md:mb-8">
-        {originalWord.split('').map((letter, index) => (
-          <div key={index} className={getRevealClass(letter, index)}>
-            {getLetterDisplay(letter, index)}
+      <div className="flex flex-wrap justify-center gap-x-8 gap-y-2 md:gap-x-12 md:gap-y-3 mb-3 md:mb-8 word-break-on-space mx-auto w-full max-w-2xl">
+        {originalWord.split(' ').map((wordBlock, wordIdx) => (
+          <div key={wordIdx} className="flex flex-nowrap mb-1">
+            {wordBlock.split('').map((letter, index) => (
+              <div key={index} className={getRevealClass(letter, index + (wordIdx === 0 ? 0 : originalWord.split(' ').slice(0, wordIdx).join(' ').length + wordIdx))}>
+                {getLetterDisplay(letter, index + (wordIdx === 0 ? 0 : originalWord.split(' ').slice(0, wordIdx).join(' ').length + wordIdx))}
+              </div>
+            ))}
           </div>
         ))}
       </div>

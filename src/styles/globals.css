@@ -1,3 +1,16 @@
+/* Permite quebra de linha apenas entre palavras (em espaços) em telas pequenas */
+.word-break-on-space {
+  flex-wrap: wrap !important;
+  white-space: normal !important;
+  overflow-x: visible !important;
+}
+/* Prevent word letter gaps from wrapping or breaking on small screens */
+.word-no-break {
+  flex-wrap: nowrap !important;
+  white-space: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

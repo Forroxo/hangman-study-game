@@ -296,18 +296,21 @@ export default function HangmanGame({ term, onGameEnd, isMultiplayer = false, ro
       </div>
 
       {/* Jogo */}
-      <div className="flex flex-col md:flex-row gap-2 md:gap-8 items-center">
-        <div className="flex-1 hidden md:block">
+      <div className="flex flex-col items-center md:flex-row md:items-start gap-2 md:gap-8 w-full">
+        {/* Boneco só no desktop */}
+        <div className="flex-1 hidden md:flex justify-center">
           <HangmanDrawing errors={errors} status={gameStatus} />
         </div>
-        
-        <div className="flex-1 w-full md:w-auto">
-          <WordDisplay 
-            word={term.word}
-            guessedLetters={guessedLetters}
-            gameStatus={gameStatus}
-          />
-          
+        <div className="flex-1 w-full flex flex-col items-center">
+          {/* Palavra sempre abaixo do boneco e acima do input */}
+          <div className="w-full flex justify-center mb-2 md:mb-4">
+            <WordDisplay 
+              word={term.word}
+              guessedLetters={guessedLetters}
+              gameStatus={gameStatus}
+              small
+            />
+          </div>
           {/* Só mostra GameStatus se não for multiplayer, ou se for multiplayer e não for erro de palavra completa */}
           {gameStatus !== 'playing' && (!isMultiplayer || (isMultiplayer && gameStatus !== 'lost')) && (
             <GameStatus 
@@ -377,14 +380,14 @@ export default function HangmanGame({ term, onGameEnd, isMultiplayer = false, ro
                   const normalized = normalizeText(e.target.value);
                   const letter = normalized.slice(0, 1);
                   setLetterInput(letter);
-                  
-                  if (letter && /^[A-Z]$/.test(letter) && gameStatus === 'playing') {
+                  // Permite letras e números
+                  if (letter && /^[A-Z0-9]$/.test(letter) && gameStatus === 'playing') {
                     setTimeout(() => {
                       handleGuess(letter);
                     }, 0);
                   }
                 }}
-                placeholder="A-Z"
+                placeholder="A-Z ou 0-9"
                 className="flex-1 px-2 md:px-4 py-1.5 md:py-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs md:text-lg font-medium uppercase text-center"
                 maxLength={1}
                 disabled={gameStatus !== 'playing'}
